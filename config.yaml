@@ -1,0 +1,136 @@
+# =============================================================================
+# config.yaml - Central configuration for XAI Project 2
+# =============================================================================
+# All scripts read defaults from this file. CLI args override these values.
+# Usage: python train.py                      (uses all defaults from config)
+#        python train.py --domain sketch      (overrides only domain)
+# =============================================================================
+
+# ---- Data Settings ----
+data:
+  data_root: /home1/ppatel2025/xai_project_2
+  num_workers: 8
+
+  # 81 classes selected from DomainNet (removed 19 weak classes from prior evaluation)
+  # Removed: skateboard, smiley_face, sleeping_bag, see_saw, golf_club, arm, snorkel,
+  #          stop_sign, table, camouflage, crayon, rain, knee, fork, sun, tooth,
+  #          picture_frame, streetlight, ear
+  classes:
+    # Animals/Nature (19)
+    - duck
+    - eye
+    - face
+    - fish
+    - flower
+    - leaf
+    - lion
+    - mermaid
+    - mouse
+    - raccoon
+    - scorpion
+    - sheep
+    - snail
+    - snake
+    - spider
+    - squirrel
+    - swan
+    - tiger
+    - tree
+    - yoga
+    - palm_tree
+    # Objects/Tools (22)
+    - axe
+    - backpack
+    - binoculars
+    - birthday_cake
+    - bowtie
+    - bucket
+    - cup
+    - door
+    - feather
+    - floor_lamp
+    - key
+    - ladder
+    - laptop
+    - marker
+    - microwave
+    - saw
+    - saxophone
+    - scissors
+    - screwdriver
+    - shoe
+    - sock
+    - spoon
+    - stethoscope
+    - suitcase
+    - sword
+    - teapot
+    - umbrella
+    # Vehicles/Transport (5)
+    - airplane
+    - bicycle
+    - firetruck
+    - sailboat
+    - school_bus
+    # Body/Human (2)
+    - skull
+    - beard
+    # Places/Architecture (5)
+    - barn
+    - lighthouse
+    - sink
+    - skyscraper
+    - stairs
+    # Sports/Activity (4)
+    - baseball
+    - baseball_bat
+    - basketball
+    - soccer_ball
+    # Symbols/Shapes (3)
+    - circle
+    - spreadsheet
+    - triangle
+    # Landmarks (2)
+    - The_Eiffel_Tower
+    - The_Mona_Lisa
+    # Food (3)
+    - banana
+    - crown
+    - wine_glass
+    # Other (8)
+    - light_bulb
+    - shorts
+    - shovel
+    - speedboat
+    - telephone
+    - tent
+    - toaster
+    - trumpet
+    - wine_bottle
+
+# ---- Training Settings ----
+training:
+  domain: real
+  epochs: 100
+  batch_size: 256
+  lr: 0.001
+  patience: 10
+  output_dir: output
+  resume: null
+
+# ---- Evaluation Settings ----
+evaluation:
+  checkpoint: output/models/real/best_model.pt
+  test_domain: real
+  batch_size: 64
+  output_dir: output/evaluation
+
+# ---- XAI / Explain Settings ----
+explain:
+  checkpoint: output/models/real/best_model.pt
+  num_samples: 5
+  output_dir: output/xai/real_model
+  batch_size: 32
+  ig_steps: 100
+  lime_samples: 3000
+  num_perturbations: 5

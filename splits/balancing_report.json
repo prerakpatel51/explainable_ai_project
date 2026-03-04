@@ -1,0 +1,650 @@
+[
+  {
+    "class": "The_Eiffel_Tower",
+    "target": 443,
+    "real_original": 443,
+    "real_added": 0,
+    "sketch_original": 221,
+    "sketch_added": 222
+  },
+  {
+    "class": "The_Mona_Lisa",
+    "target": 231,
+    "real_original": 231,
+    "real_added": 0,
+    "sketch_original": 117,
+    "sketch_added": 114
+  },
+  {
+    "class": "airplane",
+    "target": 265,
+    "real_original": 174,
+    "real_added": 91,
+    "sketch_original": 265,
+    "sketch_added": 0
+  },
+  {
+    "class": "axe",
+    "target": 306,
+    "real_original": 306,
+    "real_added": 0,
+    "sketch_original": 175,
+    "sketch_added": 131
+  },
+  {
+    "class": "backpack",
+    "target": 351,
+    "real_original": 351,
+    "real_added": 0,
+    "sketch_original": 176,
+    "sketch_added": 175
+  },
+  {
+    "class": "banana",
+    "target": 206,
+    "real_original": 206,
+    "real_added": 0,
+    "sketch_original": 164,
+    "sketch_added": 42
+  },
+  {
+    "class": "barn",
+    "target": 251,
+    "real_original": 251,
+    "real_added": 0,
+    "sketch_original": 161,
+    "sketch_added": 90
+  },
+  {
+    "class": "baseball",
+    "target": 69,
+    "real_original": 69,
+    "real_added": 0,
+    "sketch_original": 38,
+    "sketch_added": 31
+  },
+  {
+    "class": "baseball_bat",
+    "target": 157,
+    "real_original": 94,
+    "real_added": 63,
+    "sketch_original": 157,
+    "sketch_added": 0
+  },
+  {
+    "class": "basketball",
+    "target": 189,
+    "real_original": 189,
+    "real_added": 0,
+    "sketch_original": 128,
+    "sketch_added": 61
+  },
+  {
+    "class": "beard",
+    "target": 582,
+    "real_original": 582,
+    "real_added": 0,
+    "sketch_original": 385,
+    "sketch_added": 197
+  },
+  {
+    "class": "bicycle",
+    "target": 564,
+    "real_original": 564,
+    "real_added": 0,
+    "sketch_original": 275,
+    "sketch_added": 289
+  },
+  {
+    "class": "binoculars",
+    "target": 322,
+    "real_original": 322,
+    "real_added": 0,
+    "sketch_original": 213,
+    "sketch_added": 109
+  },
+  {
+    "class": "birthday_cake",
+    "target": 245,
+    "real_original": 245,
+    "real_added": 0,
+    "sketch_original": 187,
+    "sketch_added": 58
+  },
+  {
+    "class": "bowtie",
+    "target": 427,
+    "real_original": 427,
+    "real_added": 0,
+    "sketch_original": 261,
+    "sketch_added": 166
+  },
+  {
+    "class": "bucket",
+    "target": 269,
+    "real_original": 269,
+    "real_added": 0,
+    "sketch_original": 130,
+    "sketch_added": 139
+  },
+  {
+    "class": "circle",
+    "target": 207,
+    "real_original": 207,
+    "real_added": 0,
+    "sketch_original": 162,
+    "sketch_added": 45
+  },
+  {
+    "class": "crown",
+    "target": 141,
+    "real_original": 136,
+    "real_added": 5,
+    "sketch_original": 141,
+    "sketch_added": 0
+  },
+  {
+    "class": "cup",
+    "target": 324,
+    "real_original": 324,
+    "real_added": 0,
+    "sketch_original": 316,
+    "sketch_added": 8
+  },
+  {
+    "class": "door",
+    "target": 297,
+    "real_original": 297,
+    "real_added": 0,
+    "sketch_original": 289,
+    "sketch_added": 8
+  },
+  {
+    "class": "duck",
+    "target": 324,
+    "real_original": 324,
+    "real_added": 0,
+    "sketch_original": 221,
+    "sketch_added": 103
+  },
+  {
+    "class": "eye",
+    "target": 556,
+    "real_original": 556,
+    "real_added": 0,
+    "sketch_original": 391,
+    "sketch_added": 165
+  },
+  {
+    "class": "face",
+    "target": 556,
+    "real_original": 556,
+    "real_added": 0,
+    "sketch_original": 362,
+    "sketch_added": 194
+  },
+  {
+    "class": "feather",
+    "target": 404,
+    "real_original": 404,
+    "real_added": 0,
+    "sketch_original": 268,
+    "sketch_added": 136
+  },
+  {
+    "class": "firetruck",
+    "target": 450,
+    "real_original": 450,
+    "real_added": 0,
+    "sketch_original": 262,
+    "sketch_added": 188
+  },
+  {
+    "class": "fish",
+    "target": 383,
+    "real_original": 383,
+    "real_added": 0,
+    "sketch_original": 299,
+    "sketch_added": 84
+  },
+  {
+    "class": "floor_lamp",
+    "target": 222,
+    "real_original": 197,
+    "real_added": 25,
+    "sketch_original": 222,
+    "sketch_added": 0
+  },
+  {
+    "class": "flower",
+    "target": 288,
+    "real_original": 288,
+    "real_added": 0,
+    "sketch_original": 268,
+    "sketch_added": 20
+  },
+  {
+    "class": "key",
+    "target": 183,
+    "real_original": 183,
+    "real_added": 0,
+    "sketch_original": 109,
+    "sketch_added": 74
+  },
+  {
+    "class": "ladder",
+    "target": 354,
+    "real_original": 354,
+    "real_added": 0,
+    "sketch_original": 196,
+    "sketch_added": 158
+  },
+  {
+    "class": "laptop",
+    "target": 309,
+    "real_original": 309,
+    "real_added": 0,
+    "sketch_original": 255,
+    "sketch_added": 54
+  },
+  {
+    "class": "leaf",
+    "target": 332,
+    "real_original": 332,
+    "real_added": 0,
+    "sketch_original": 302,
+    "sketch_added": 30
+  },
+  {
+    "class": "light_bulb",
+    "target": 324,
+    "real_original": 210,
+    "real_added": 114,
+    "sketch_original": 324,
+    "sketch_added": 0
+  },
+  {
+    "class": "lighthouse",
+    "target": 578,
+    "real_original": 578,
+    "real_added": 0,
+    "sketch_original": 308,
+    "sketch_added": 270
+  },
+  {
+    "class": "lion",
+    "target": 412,
+    "real_original": 412,
+    "real_added": 0,
+    "sketch_original": 264,
+    "sketch_added": 148
+  },
+  {
+    "class": "marker",
+    "target": 269,
+    "real_original": 269,
+    "real_added": 0,
+    "sketch_original": 192,
+    "sketch_added": 77
+  },
+  {
+    "class": "mermaid",
+    "target": 359,
+    "real_original": 359,
+    "real_added": 0,
+    "sketch_original": 182,
+    "sketch_added": 177
+  },
+  {
+    "class": "microwave",
+    "target": 270,
+    "real_original": 270,
+    "real_added": 0,
+    "sketch_original": 136,
+    "sketch_added": 134
+  },
+  {
+    "class": "mouse",
+    "target": 117,
+    "real_original": 117,
+    "real_added": 0,
+    "sketch_original": 101,
+    "sketch_added": 16
+  },
+  {
+    "class": "palm_tree",
+    "target": 267,
+    "real_original": 267,
+    "real_added": 0,
+    "sketch_original": 133,
+    "sketch_added": 134
+  },
+  {
+    "class": "raccoon",
+    "target": 540,
+    "real_original": 540,
+    "real_added": 0,
+    "sketch_original": 278,
+    "sketch_added": 262
+  },
+  {
+    "class": "sailboat",
+    "target": 338,
+    "real_original": 338,
+    "real_added": 0,
+    "sketch_original": 289,
+    "sketch_added": 49
+  },
+  {
+    "class": "saw",
+    "target": 94,
+    "real_original": 94,
+    "real_added": 0,
+    "sketch_original": 88,
+    "sketch_added": 6
+  },
+  {
+    "class": "saxophone",
+    "target": 386,
+    "real_original": 386,
+    "real_added": 0,
+    "sketch_original": 248,
+    "sketch_added": 138
+  },
+  {
+    "class": "school_bus",
+    "target": 382,
+    "real_original": 382,
+    "real_added": 0,
+    "sketch_original": 324,
+    "sketch_added": 58
+  },
+  {
+    "class": "scissors",
+    "target": 454,
+    "real_original": 454,
+    "real_added": 0,
+    "sketch_original": 349,
+    "sketch_added": 105
+  },
+  {
+    "class": "scorpion",
+    "target": 364,
+    "real_original": 357,
+    "real_added": 7,
+    "sketch_original": 364,
+    "sketch_added": 0
+  },
+  {
+    "class": "screwdriver",
+    "target": 333,
+    "real_original": 333,
+    "real_added": 0,
+    "sketch_original": 299,
+    "sketch_added": 34
+  },
+  {
+    "class": "sheep",
+    "target": 636,
+    "real_original": 636,
+    "real_added": 0,
+    "sketch_original": 380,
+    "sketch_added": 256
+  },
+  {
+    "class": "shoe",
+    "target": 516,
+    "real_original": 469,
+    "real_added": 47,
+    "sketch_original": 516,
+    "sketch_added": 0
+  },
+  {
+    "class": "shorts",
+    "target": 423,
+    "real_original": 355,
+    "real_added": 68,
+    "sketch_original": 423,
+    "sketch_added": 0
+  },
+  {
+    "class": "shovel",
+    "target": 504,
+    "real_original": 360,
+    "real_added": 144,
+    "sketch_original": 504,
+    "sketch_added": 0
+  },
+  {
+    "class": "sink",
+    "target": 372,
+    "real_original": 185,
+    "real_added": 187,
+    "sketch_original": 372,
+    "sketch_added": 0
+  },
+  {
+    "class": "skull",
+    "target": 480,
+    "real_original": 263,
+    "real_added": 217,
+    "sketch_original": 480,
+    "sketch_added": 0
+  },
+  {
+    "class": "skyscraper",
+    "target": 372,
+    "real_original": 228,
+    "real_added": 144,
+    "sketch_original": 372,
+    "sketch_added": 0
+  },
+  {
+    "class": "snail",
+    "target": 372,
+    "real_original": 372,
+    "real_added": 0,
+    "sketch_original": 324,
+    "sketch_added": 48
+  },
+  {
+    "class": "snake",
+    "target": 401,
+    "real_original": 401,
+    "real_added": 0,
+    "sketch_original": 376,
+    "sketch_added": 25
+  },
+  {
+    "class": "soccer_ball",
+    "target": 301,
+    "real_original": 218,
+    "real_added": 83,
+    "sketch_original": 301,
+    "sketch_added": 0
+  },
+  {
+    "class": "sock",
+    "target": 425,
+    "real_original": 425,
+    "real_added": 0,
+    "sketch_original": 363,
+    "sketch_added": 62
+  },
+  {
+    "class": "speedboat",
+    "target": 496,
+    "real_original": 496,
+    "real_added": 0,
+    "sketch_original": 389,
+    "sketch_added": 107
+  },
+  {
+    "class": "spider",
+    "target": 516,
+    "real_original": 475,
+    "real_added": 41,
+    "sketch_original": 516,
+    "sketch_added": 0
+  },
+  {
+    "class": "spoon",
+    "target": 428,
+    "real_original": 428,
+    "real_added": 0,
+    "sketch_original": 324,
+    "sketch_added": 104
+  },
+  {
+    "class": "spreadsheet",
+    "target": 601,
+    "real_original": 601,
+    "real_added": 0,
+    "sketch_original": 541,
+    "sketch_added": 60
+  },
+  {
+    "class": "squirrel",
+    "target": 555,
+    "real_original": 555,
+    "real_added": 0,
+    "sketch_original": 311,
+    "sketch_added": 244
+  },
+  {
+    "class": "stairs",
+    "target": 420,
+    "real_original": 283,
+    "real_added": 137,
+    "sketch_original": 420,
+    "sketch_added": 0
+  },
+  {
+    "class": "stethoscope",
+    "target": 396,
+    "real_original": 396,
+    "real_added": 0,
+    "sketch_original": 189,
+    "sketch_added": 207
+  },
+  {
+    "class": "suitcase",
+    "target": 346,
+    "real_original": 346,
+    "real_added": 0,
+    "sketch_original": 247,
+    "sketch_added": 99
+  },
+  {
+    "class": "swan",
+    "target": 261,
+    "real_original": 261,
+    "real_added": 0,
+    "sketch_original": 189,
+    "sketch_added": 72
+  },
+  {
+    "class": "sword",
+    "target": 473,
+    "real_original": 473,
+    "real_added": 0,
+    "sketch_original": 308,
+    "sketch_added": 165
+  },
+  {
+    "class": "teapot",
+    "target": 505,
+    "real_original": 505,
+    "real_added": 0,
+    "sketch_original": 261,
+    "sketch_added": 244
+  },
+  {
+    "class": "telephone",
+    "target": 383,
+    "real_original": 383,
+    "real_added": 0,
+    "sketch_original": 205,
+    "sketch_added": 178
+  },
+  {
+    "class": "tent",
+    "target": 472,
+    "real_original": 472,
+    "real_added": 0,
+    "sketch_original": 271,
+    "sketch_added": 201
+  },
+  {
+    "class": "tiger",
+    "target": 485,
+    "real_original": 485,
+    "real_added": 0,
+    "sketch_original": 308,
+    "sketch_added": 177
+  },
+  {
+    "class": "toaster",
+    "target": 428,
+    "real_original": 428,
+    "real_added": 0,
+    "sketch_original": 213,
+    "sketch_added": 215
+  },
+  {
+    "class": "tree",
+    "target": 444,
+    "real_original": 428,
+    "real_added": 16,
+    "sketch_original": 444,
+    "sketch_added": 0
+  },
+  {
+    "class": "triangle",
+    "target": 301,
+    "real_original": 301,
+    "real_added": 0,
+    "sketch_original": 243,
+    "sketch_added": 58
+  },
+  {
+    "class": "trumpet",
+    "target": 313,
+    "real_original": 313,
+    "real_added": 0,
+    "sketch_original": 150,
+    "sketch_added": 163
+  },
+  {
+    "class": "umbrella",
+    "target": 290,
+    "real_original": 290,
+    "real_added": 0,
+    "sketch_original": 237,
+    "sketch_added": 53
+  },
+  {
+    "class": "wine_bottle",
+    "target": 325,
+    "real_original": 325,
+    "real_added": 0,
+    "sketch_original": 220,
+    "sketch_added": 105
+  },
+  {
+    "class": "wine_glass",
+    "target": 270,
+    "real_original": 270,
+    "real_added": 0,
+    "sketch_original": 197,
+    "sketch_added": 73
+  },
+  {
+    "class": "yoga",
+    "target": 297,
+    "real_original": 297,
+    "real_added": 0,
+    "sketch_original": 201,
+    "sketch_added": 96
+  }
+]

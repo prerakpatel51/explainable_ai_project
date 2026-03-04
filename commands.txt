@@ -1,0 +1,106 @@
+# =============================================================================
+# XAI Project 2 - Commands Reference
+# =============================================================================
+# All commands use config.yaml for defaults. No extra args needed.
+# Override any setting via CLI flags (e.g., --domain sketch, --epochs 50).
+# =============================================================================
+
+# ---- Step 0: Install dependencies (one-time) ----
+pip install -r requirements.txt
+pip install pyyaml
+
+# ---- Step 1: Prepare data (100 balanced classes, oversampled training splits) ----
+python prepare_data.py
+
+# =============================================================================
+# OPTION A: Run via SLURM (recommended for full pipeline)
+# =============================================================================
+
+# Submit real domain pipeline (train + eval on both domains + XAI)
+sbatch run_real.sh
+
+# Submit sketch domain pipeline (train + eval on both domains + XAI)
+sbatch run_sketch.sh
+
+# Submit both in parallel
+sbatch run_real.sh && sbatch run_sketch.sh
+
+# Check job status
+squeue -u $USER
+
+# View logs
+tail -f logs/real_<JOB_ID>.out
+tail -f logs/sketch_<JOB_ID>.out
+
+# =============================================================================
+# OPTION B: Run individual steps manually
+# =============================================================================
+
+# ---- Step 2: Train real model ----
+python train.py
+
+# ---- Step 3: Train sketch model ----
+python train.py --domain sketch
+
+# ---- Step 4: Evaluate real model (in-domain: real->real) ----
+python evaluate.py
+
+# ---- Step 5: Evaluate real model (cross-domain: real->sketch) ----
+python evaluate.py --test_domain sketch
+
+# ---- Step 6: Evaluate sketch model (in-domain: sketch->sketch) ----
+python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain sketch
+
+# ---- Step 7: Evaluate sketch model (cross-domain: sketch->real) ----
+python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain real
+
+# ---- Step 8: XAI on real model (explains both real & sketch images) ----
+python explain.py
+
+# ---- Step 9: XAI on sketch model (explains both real & sketch images) ----
+python explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model
+
+# ---- Quick XAI run (fewer samples, faster) ----
+python explain.py --num_samples 2
+python explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model --num_samples 2
+
+# =============================================================================
+# Full manual pipeline (copy-paste)
+# =============================================================================
+python prepare_data.py && \
+python train.py && \
+python train.py --domain sketch && \
+python evaluate.py && \
+python evaluate.py --test_domain sketch && \
+python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain sketch && \
+python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain real && \
+python explain.py && \
+python explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model
+
+# =============================================================================
+# Output Structure
+# =============================================================================
+# output/
+# ├── models/
+# │   ├── real/
+# │   │   ├── best_model.pt
+# │   │   ├── checkpoints/epoch_01.pt, epoch_02.pt, ...
+# │   │   └── training_log.csv
+# │   └── sketch/
+# │       ├── best_model.pt
+# │       ├── checkpoints/...
+# │       └── training_log.csv
+# ├── evaluation/
+# │   ├── real_model_on_real/
+# │   │   ├── overall_metrics.csv, per_class_metrics.csv
+# │   │   ├── confusion_matrix.csv, confusion_matrix.png
+# │   │   ├── training_loss.png, training_accuracy.png
+# │   │   ├── training_f1.png, training_precision_recall.png
+# │   │   ├── training_lr.png, training_summary.png
+# │   ├── real_model_on_sketch/
+# │   ├── sketch_model_on_sketch/
+# │   └── sketch_model_on_real/
+# └── xai/
+#     ├── real_model/    (attribution maps, stability, faithfulness,
+#     │                   cross-domain consistency, representations)
+#     └── sketch_model/
