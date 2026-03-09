@@ -219,19 +219,33 @@ def load_split(filepath):
     return [(item[0], item[1]) for item in data]
 
 
-def balance_samples(samples, seed=42):
-    """Subsample so every class has the same number of images (min across classes)."""
+def balance_samples(samples, n_per_class=15, seed=42, allow_oversample=False):
+    """Subsample so every class has exactly n_per_class images.
+
+    If allow_oversample=False (default), caps at the smallest class count.
+    If allow_oversample=True, classes with fewer samples are oversampled
+    (duplicated with random selection) to reach n_per_class.
+    """
     rng = random.Random(seed)
     by_class = collections.defaultdict(list)
     for path, label in samples:
         by_class[label].append((path, label))
-    min_count = min(len(v) for v in by_class.values())
+    if allow_oversample:
+        count = n_per_class
+    else:
+        count = min(n_per_class, min(len(v) for v in by_class.values()))
     balanced = []
     for label in sorted(by_class.keys()):
         items = by_class[label]
         rng.shuffle(items)
-        balanced.extend(items[:min_count])
-    return balanced, min_count
+        if len(items) >= count:
+            balanced.extend(items[:count])
+        else:
+            # Oversample: use all items + randomly duplicate to fill
+            balanced.extend(items)
+            extras = [rng.choice(items) for _ in range(count - len(items))]
+            balanced.extend(extras)
+    return balanced, count
 
 
 def main():
@@ -377,7 +391,9 @@ def main():
 
     # Build balanced test set (equal samples per class) for fair confusion matrix
     print("\nBuilding balanced test set for confusion matrix ...")
-    balanced_samples, samples_per_class = balance_samples(test_samples)
+    balanced_samples, samples_per_class = balance_samples(
+        test_samples, n_per_class=9, allow_oversample=True
+    )
     print(f"  Balanced: {len(balanced_samples)} samples "
           f"({samples_per_class} per class x {num_classes} classes)")
 
@@ -410,80 +426,60 @@ def main():
         else:
             bal_acc_per_class.append(0.0)
 
-    # Select 20 representative classes for a readable confusion matrix:
-    # top 15 by accuracy, 5 mid-range
-    acc_arr = np.array(bal_acc_per_class)
-    sorted_indices = np.argsort(acc_arr)  # ascending order
+    # Plot all classes
+    n_sub = num_classes
+    cm_sub = cm
+    sub_names = class_names
+    sub_acc = bal_acc_per_class
 
-    top15 = sorted_indices[-15:][::-1].tolist()        # best 15
-    # mid classes: pick 5 evenly spaced from the remaining pool
-    mid_pool = sorted_indices[:-15]
-    if len(mid_pool) >= 5:
-        mid_step = len(mid_pool) / 5
-        mid5 = [mid_pool[int(i * mid_step)] for i in range(5)]
-    else:
-        mid5 = mid_pool.tolist()
+    # Normalize rows to [0,1] for coloring (shows per-class error pattern clearly),
+    # but annotate cells with raw counts so numbers stay meaningful.
+    row_sums = cm_sub.sum(axis=1, keepdims=True).clip(min=1)
+    cm_norm = cm_sub.astype(float) / row_sums
 
-    selected = top15 + mid5
-    seen = set()
-    unique_selected = []
-    for idx in selected:
-        if idx not in seen:
-            seen.add(idx)
-            unique_selected.append(idx)
-    selected_sorted = sorted(unique_selected)
+    # Figure: 0.28 inches per class gives a readable cell size for 81 classes
+    cell_size = 0.28
+    fig_w = max(22, n_sub * cell_size + 5)   # +5 for y-axis labels
+    fig_h = max(20, n_sub * cell_size + 3)   # +3 for x-axis labels + title
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
 
-    # Extract the sub-matrix
-    cm_sub = cm[np.ix_(selected_sorted, selected_sorted)]
-    sub_names = [class_names[i] for i in selected_sorted]
-    sub_acc = [bal_acc_per_class[i] for i in selected_sorted]
-    n_sub = len(selected_sorted)
-
-    # Categorize for label coloring
-    top_set = set(top15)
-
-    # Save confusion matrix heatmap PNG (20-class subset, balanced)
-    fig, ax = plt.subplots(figsize=(12, 10))
-    im = ax.imshow(cm_sub, interpolation="nearest", cmap="Blues")
+    im = ax.imshow(cm_norm, interpolation="nearest", cmap="Blues", vmin=0, vmax=1)
     ax.set_title(
         f"Confusion Matrix: {train_domain.capitalize()} Model \u2192 "
         f"{args.test_domain.capitalize()} Test  "
-        f"(20 classes, {samples_per_class} imgs/class)",
-        fontsize=14, pad=20,
+        f"({n_sub} classes, {samples_per_class} imgs/class)",
+        fontsize=13, pad=14,
     )
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
+    cbar.set_label("Row-normalized fraction", fontsize=9)
 
-    # Annotate cells with counts
-    thresh = cm_sub.max() / 2
+    # Only annotate diagonal and non-zero off-diagonal with raw counts
     for i in range(n_sub):
         for j in range(n_sub):
             val = cm_sub[i, j]
-            if val != 0:
-                ax.text(j, i, str(val), ha="center", va="center",
-                        fontsize=7, color="white" if val > thresh else "black")
+            if val == 0:
+                continue
+            txt_color = "white" if cm_norm[i, j] > 0.55 else "black"
+            ax.text(j, i, str(val), ha="center", va="center",
+                    fontsize=5, color=txt_color, fontweight="bold" if i == j else "normal")
 
-    # Axis labels with accuracy annotation and color coding
+    # Axis tick labels
     tick_marks = np.arange(n_sub)
-    x_labels = [f"{name}" for name in sub_names]
+    label_font = 6
+    x_labels = list(sub_names)
     y_labels = [f"{name} ({acc:.0f}%)" for name, acc in zip(sub_names, sub_acc)]
 
     ax.set_xticks(tick_marks)
-    ax.set_xticklabels(x_labels, rotation=45, ha="right", fontsize=8)
+    ax.set_xticklabels(x_labels, rotation=90, ha="center", fontsize=label_font)
     ax.set_yticks(tick_marks)
-    ax.set_yticklabels(y_labels, fontsize=8)
-
-    # Color-code y-axis labels: green=top 15, orange=mid 5
-    for i, orig_idx in enumerate(selected_sorted):
-        color = "green" if orig_idx in top_set else "darkorange"
-        ax.get_yticklabels()[i].set_color(color)
-        ax.get_xticklabels()[i].set_color(color)
+    ax.set_yticklabels(y_labels, fontsize=label_font)
 
     ax.set_xlabel("Predicted", fontsize=11)
     ax.set_ylabel("True (per-class accuracy)", fontsize=11)
 
     plt.tight_layout()
     cm_png = os.path.join(eval_dir, "confusion_matrix.png")
-    fig.savefig(cm_png, dpi=150, bbox_inches="tight")
+    fig.savefig(cm_png, dpi=200, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved confusion matrix plot ({n_sub} classes): {cm_png}")
 

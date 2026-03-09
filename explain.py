@@ -35,6 +35,7 @@ import yaml
 from lime import lime_image
 from PIL import Image
 from scipy import ndimage
+from skimage.segmentation import slic
 from sklearn.manifold import TSNE
 from skimage.metrics import structural_similarity as ssim
 from torch.utils.data import DataLoader
@@ -284,12 +285,13 @@ def integrated_gradients(model, input_tensor, target_class, device,
         scores.backward()
         all_grads.append(interpolated.grad.detach())
 
-    # Average gradients (trapezoidal approximation)
+    # Average gradients (trapezoidal rule: endpoints weighted by 0.5)
     grads = torch.cat(all_grads, dim=0)  # (ig_steps+1, 3, 224, 224)
-    avg_grads = (grads[:-1] + grads[1:]).mean(dim=0)  # (3, 224, 224)
+    avg_grads = (grads[:-1] + grads[1:]).sum(dim=0) / (2 * ig_steps)  # (3, 224, 224)
 
-    # Attribution = avg_grads * (input - baseline)
-    attribution = (avg_grads * diff.squeeze(0)).abs().sum(dim=0)  # (224, 224)
+    # Attribution = avg_grads * (input - baseline), keep only positive contributions
+    attribution = (avg_grads * diff.squeeze(0))          # (3, 224, 224), signed
+    attribution = attribution.clamp(min=0).sum(dim=0)    # (224, 224)
     attribution = attribution.cpu().numpy()
     return normalize_heatmap(attribution)
 
@@ -316,23 +318,28 @@ def lime_explanation(model, image_np, target_class, device, num_samples=1000):
         return probs.cpu().numpy()
 
     explainer = lime_image.LimeImageExplainer(random_state=42)
+    segmentation_fn = lambda img: slic(img, n_segments=150, compactness=10, sigma=1, start_label=0)
     explanation = explainer.explain_instance(
         image_np,
         batch_predict,
         top_labels=None,
         labels=(target_class,),
-        hide_color=0,
+        hide_color=128,  # gray fill avoids black-image distribution shift
         num_samples=num_samples,
+        segmentation_fn=segmentation_fn,
         random_seed=42,
     )
 
-    # Extract per-superpixel weights
+    # Extract per-superpixel weights (signed: positive = supports class)
     segments = explanation.segments
     local_exp = explanation.local_exp[target_class]
     heatmap = np.zeros(segments.shape, dtype=np.float64)
     for seg_id, weight in local_exp:
         heatmap[segments == seg_id] = weight
 
+    # Keep only positive contributions before normalizing so that
+    # regions hurting the prediction don't get ranked above neutral ones.
+    heatmap = np.clip(heatmap, 0, None)
     return normalize_heatmap(heatmap)
 
 

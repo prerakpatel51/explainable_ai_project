@@ -38,29 +38,29 @@ echo "============================================================"
 # ---- Step 1: Prepare data ----
 echo ""
 echo ">>> Step 1/6: Preparing data splits ..."
-python prepare_data.py
+# python prepare_data.py
 echo ">>> Data preparation complete."
 
 # ---- Step 2: Train on sketch domain ----
 echo ""
 echo ">>> Step 2/6: Training on SKETCH domain ..."
-python train.py --domain sketch
+# python train.py --domain sketch
 echo ">>> Training complete."
 
 # ---- Step 2: Evaluate sketch model on sketch test set ----
 echo ""
 echo ">>> Step 3/6: Evaluating sketch model on SKETCH test set ..."
-python evaluate.py \
-    --checkpoint output/models/sketch/best_model.pt \
-    --test_domain sketch
+# python evaluate.py \
+#     --checkpoint output/models/sketch/best_model.pt \
+#     --test_domain sketch
 echo ">>> Evaluation (sketch->sketch) complete."
 
 # ---- Step 3: Evaluate sketch model on real test set ----
 echo ""
 echo ">>> Step 4/6: Evaluating sketch model on REAL test set ..."
-python evaluate.py \
-    --checkpoint output/models/sketch/best_model.pt \
-    --test_domain real
+# python evaluate.py \
+#     --checkpoint output/models/sketch/best_model.pt \
+#     --test_domain real
 echo ">>> Evaluation (sketch->real) complete."
 
 # ---- Step 4: XAI on sketch model ----

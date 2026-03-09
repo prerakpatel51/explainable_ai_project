@@ -128,7 +128,7 @@ evaluation:
 # ---- XAI / Explain Settings ----
 explain:
   checkpoint: output/models/real/best_model.pt
-  num_samples: 5
+  num_samples: 20
   output_dir: output/xai/real_model
   batch_size: 32
   ig_steps: 100
