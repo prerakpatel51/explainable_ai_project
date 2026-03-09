@@ -6,6 +6,12 @@ The central question this project answers:
 
 > *When a neural network is trained on one visual style, do its explanations remain consistent, faithful, and stable — even on images it has never seen before?*
 
+<p align="center">
+  <img src="docs/images/attribution_maps/gradcam_real_airplane.png" width="45%" alt="Grad-CAM on real airplane"/>
+  <img src="docs/images/attribution_maps/lime_real_airplane.png" width="45%" alt="LIME on real airplane"/>
+</p>
+<p align="center"><em>Grad-CAM (left) and LIME (right) attribution maps on a real airplane — highlighting where the model looks to make its prediction.</em></p>
+
 ---
 
 ## Table of Contents
@@ -317,6 +323,11 @@ After layer4, the spatial information is collapsed by global average pooling int
 
 **Limitations:** Coarse resolution (7×7 base) — shows *which region* matters but not *which specific pixels*. Tends to highlight only the most discriminative part of an object (e.g., the face but not the body). No formal mathematical guarantees.
 
+<p align="center">
+  <img src="docs/images/attribution_maps/gradcam_real_airplane.png" width="80%" alt="Grad-CAM example"/>
+</p>
+<p align="center"><em>Grad-CAM on a real airplane — the broad red region correctly covers the aircraft body, but fine details are lost at 7×7 resolution.</em></p>
+
 ---
 
 ### Method 2: Grad-CAM++
@@ -341,6 +352,11 @@ Grad-CAM asks: "On average across all positions, does this channel help predict 
 **Strengths:** Better full-object coverage, more numerically stable weights, better multi-instance localization, same computational cost as Grad-CAM (one forward + backward pass).
 
 **Limitations:** Still limited to 7×7 resolution, higher-order gradients can be unstable for some architectures (works well for ResNets), still a heuristic without formal guarantees.
+
+<p align="center">
+  <img src="docs/images/attribution_maps/gradcampp_real_airplane.png" width="80%" alt="Grad-CAM++ example"/>
+</p>
+<p align="center"><em>Grad-CAM++ on the same airplane — note the broader, more complete coverage of all aircraft compared to Grad-CAM above.</em></p>
 
 ---
 
@@ -387,6 +403,11 @@ Consider a pixel vital for recognizing a tiger's stripe. At the baseline (black)
 
 **Limitations:** Slow (101 forward+backward passes per image, ~100× slower than Grad-CAM), noisier heatmaps (full resolution with no smoothing), baseline-dependent (black vs. white vs. random can change results).
 
+<p align="center">
+  <img src="docs/images/attribution_maps/ig_real_airplane.png" width="80%" alt="Integrated Gradients example"/>
+</p>
+<p align="center"><em>Integrated Gradients on the same airplane — pixel-level detail picks up individual edges of the fuselage and wings, but the output is sparser and noisier.</em></p>
+
 ---
 
 ### Method 4: LIME
@@ -422,6 +443,35 @@ LIME doesn't need access to weights, gradients, or architecture — just the abi
 **Strengths:** Model-agnostic (works with any classifier), human-interpretable (superpixel regions are visually meaningful), captures feature interactions implicitly.
 
 **Limitations:** Slowest method (3,000 forward passes per image), inherently stochastic (different perturbations → slightly different explanations, though we fix `random_state=42`), superpixel-dependent (poor segmentation → poor explanations), local fidelity only.
+
+<p align="center">
+  <img src="docs/images/attribution_maps/lime_real_airplane.png" width="80%" alt="LIME example"/>
+</p>
+<p align="center"><em>LIME on the same airplane — superpixel regions are coloured by importance. The airplane bodies are clearly identified as the most important regions (warm colours).</em></p>
+
+---
+
+### All Four Methods Side-by-Side
+
+<p align="center">
+  <img src="docs/images/attribution_maps/gradcam_real_skull.png" width="45%" alt="Grad-CAM skull"/>
+  <img src="docs/images/attribution_maps/gradcampp_real_skull.png" width="45%" alt="Grad-CAM++ skull"/>
+</p>
+<p align="center">
+  <img src="docs/images/attribution_maps/ig_real_skull.png" width="45%" alt="IG skull"/>
+  <img src="docs/images/attribution_maps/lime_real_skull.png" width="45%" alt="LIME skull"/>
+</p>
+<p align="center"><em>All four methods on a real skull (100% accuracy class). Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). All methods agree on the key features — eye sockets, nasal cavity, cranium outline.</em></p>
+
+---
+
+### Cross-Domain Attribution Example
+
+<p align="center">
+  <img src="docs/images/attribution_maps/gradcam_real_model_sketch_bicycle.png" width="45%" alt="Real model on sketch bicycle"/>
+  <img src="docs/images/attribution_maps/gradcam_sketch_model_sketch_bicycle.png" width="45%" alt="Sketch model on sketch bicycle"/>
+</p>
+<p align="center"><em>Grad-CAM on a sketch bicycle — Real model (left) vs. Sketch model (right). The sketch model produces a more focused, confident heatmap on the bicycle's structural features. The real model's heatmap is more diffuse, reflecting difficulty without texture cues.</em></p>
 
 ---
 
@@ -594,6 +644,32 @@ For each method and each of the 81 classes:
 | Sketch | Sketch | 80.62% | 0.8087 | 0.8057 | 0.8103 | 0.8178 |
 | Sketch | Real | 83.02% | 0.8164 | 0.8313 | **0.8425** | 0.8193 |
 
+#### Training Summaries
+
+<p align="center">
+  <img src="docs/images/evaluation/real_training_summary.png" width="80%" alt="Real model training summary"/>
+</p>
+<p align="center"><em>Real model training summary — loss, accuracy, F1, and precision/recall over 21 epochs. Validation accuracy stabilizes around 94.5% from epoch 5.</em></p>
+
+<p align="center">
+  <img src="docs/images/evaluation/sketch_training_summary.png" width="80%" alt="Sketch model training summary"/>
+</p>
+<p align="center"><em>Sketch model training summary — 19 epochs. Slower convergence and lower final accuracy (82-83%) reflects the greater challenge of learning from abstract sketches.</em></p>
+
+#### Confusion Matrices
+
+<p align="center">
+  <img src="docs/images/evaluation/cm_real_real.png" width="45%" alt="Real→Real CM"/>
+  <img src="docs/images/evaluation/cm_real_sketch.png" width="45%" alt="Real→Sketch CM"/>
+</p>
+<p align="center"><em>Real model — In-domain (left, strong diagonal) vs. Cross-domain on sketches (right, significant off-diagonal confusion).</em></p>
+
+<p align="center">
+  <img src="docs/images/evaluation/cm_sketch_sketch.png" width="45%" alt="Sketch→Sketch CM"/>
+  <img src="docs/images/evaluation/cm_sketch_real.png" width="45%" alt="Sketch→Real CM"/>
+</p>
+<p align="center"><em>Sketch model — In-domain on sketches (left) vs. Cross-domain on real (right). The sketch→real confusion matrix remains surprisingly clean.</em></p>
+
 #### Key observations
 
 1. **Asymmetric transfer:** The sketch model transfers to real images (83.02%) far better than the real model transfers to sketches (56.17%) — a gap of ~27 percentage points.
@@ -679,6 +755,30 @@ For each method and each of the 81 classes:
 ### Representation Analysis (t-SNE / UMAP)
 
 Feature vectors (2048-D) from the penultimate layer were projected to 2D using t-SNE and UMAP for both models.
+
+#### Real Model — Feature Space
+
+<p align="center">
+  <img src="docs/images/representations/real_tsne_domain.png" width="45%" alt="Real model t-SNE by domain"/>
+  <img src="docs/images/representations/real_umap_domain.png" width="45%" alt="Real model UMAP by domain"/>
+</p>
+<p align="center"><em>Real model feature space coloured by domain — t-SNE (left) and UMAP (right). Blue = real, orange = sketch. Notice the clear separation between domains — the real model encodes domain-specific (texture-based) features.</em></p>
+
+#### Sketch Model — Feature Space
+
+<p align="center">
+  <img src="docs/images/representations/sketch_tsne_domain.png" width="45%" alt="Sketch model t-SNE by domain"/>
+  <img src="docs/images/representations/sketch_umap_domain.png" width="45%" alt="Sketch model UMAP by domain"/>
+</p>
+<p align="center"><em>Sketch model feature space coloured by domain — t-SNE (left) and UMAP (right). The real and sketch points are much more interleaved, confirming the sketch model learns domain-invariant (shape-based) representations.</em></p>
+
+#### Class Structure
+
+<p align="center">
+  <img src="docs/images/representations/real_tsne_class.png" width="45%" alt="Real model t-SNE by class"/>
+  <img src="docs/images/representations/sketch_tsne_class.png" width="45%" alt="Sketch model t-SNE by class"/>
+</p>
+<p align="center"><em>t-SNE coloured by class — Real model (left) vs. Sketch model (right). Both models produce coherent class clusters, confirming the 81-class task has been learned successfully.</em></p>
 
 #### Key findings
 
