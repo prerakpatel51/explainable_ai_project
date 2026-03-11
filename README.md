@@ -7,10 +7,10 @@ The central question this project answers:
 > *When a neural network is trained on one visual style, do its explanations remain consistent, faithful, and stable — even on images it has never seen before?*
 
 <p align="center">
-  <img src="docs/images/attribution_maps/gradcam_real_airplane.png" width="45%" alt="Grad-CAM on real airplane"/>
-  <img src="docs/images/attribution_maps/lime_real_airplane.png" width="45%" alt="LIME on real airplane"/>
+  <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM on real ladder"/>
+  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME on real ladder"/>
 </p>
-<p align="center"><em>Grad-CAM (left) and LIME (right) attribution maps on a real airplane — highlighting where the model looks to make its prediction.</em></p>
+<p align="center"><em>Grad-CAM (left) and LIME (right) attribution maps on a real ladder — highlighting where the model looks to make its prediction.</em></p>
 
 ---
 
@@ -370,15 +370,19 @@ Cross-domain evaluation reveals how well the model generalizes to a different vi
 
 **Goal:** Apply four attribution methods to the trained model and rigorously measure explanation quality along four axes.
 
-Deep neural networks achieve impressive accuracy, but they function as "black boxes" — they don't explain *why* they make a prediction. **Attribution methods** (also called *saliency methods*) address this by assigning an importance score to every spatial location in the input image. The result is a **heatmap** that highlights the pixels or regions most influential to the model's decision. For example, if the model predicts "airplane", the heatmap should highlight the wings and fuselage rather than the background sky.
+Deep neural networks achieve impressive accuracy, but they function as "black boxes" — they don't explain *why* they make a prediction. **Attribution methods** (also called *saliency methods*) address this by assigning an importance score to every spatial location in the input image. The result is a **heatmap** that highlights the pixels or regions most influential to the model's decision. For example, if the model predicts "ladder", the heatmap should highlight the rungs and rails rather than the background.
 
 In this project we apply four complementary attribution methods. Each takes a different approach to the same question: *"Which pixels drove the model to predict this class?"* Understanding the differences between these methods is essential for interpreting the results.
+
+> **New to AI? Start here:** When an AI looks at a photo and says "this is a tiger," it doesn't explain *why* — it's a black box. The four methods below are different techniques to "peek inside the box" and generate visual explanations (heatmaps) showing which parts of the image the AI relied on. Each method produces a coloured overlay on the original photo: **warm colours (red/orange/yellow) = important regions**, **cool colours (blue/dark blue) = unimportant regions**. Think of it like asking four different experts to explain the same AI decision — they each use a different strategy, so their answers look slightly different, but if they all agree on the same region, we can be confident that region truly matters to the AI.
 
 ---
 
 ### Method 1: Grad-CAM
 
 **Gradient-weighted Class Activation Mapping**
+
+> **Plain English:** Imagine you ask a friend to identify an animal in a photo, and they say "tiger." You then ask: "Where are you looking that makes you say tiger?" Grad-CAM answers exactly this question — it produces a heatmap (like a thermal camera image) showing which *regions* of the photo the AI focused on most. Red/warm areas = "I looked here a lot"; blue/cool areas = "I mostly ignored this part." It's like putting a heat-sensing camera on the AI's "eyes."
 
 Grad-CAM is one of the most widely used XAI methods in computer vision. It works by looking at the *last convolutional layer* of the network — the layer that still retains spatial information (it knows *where* things are) while also encoding high-level semantic concepts (it knows *what* things look like).
 
@@ -395,7 +399,7 @@ After layer4, the spatial information is collapsed by global average pooling int
 
 1. **Forward pass:** The input image (224×224×3) is fed through the network. A PyTorch *forward hook* on `layer4` records the output **feature maps** A ∈ ℝ^(2048×7×7). Think of this as 2,048 small 7×7 images, each encoding a different visual pattern. For example, one channel might activate wherever it sees "fur texture", another wherever it sees "circular shape".
 
-2. **Backward pass:** We select the class to explain (say, "airplane") and compute the gradient of its score y^c with respect to the feature maps. These gradients tell us how a small change at each spatial location in each channel would affect the airplane score. Large positive gradients mean "helpful for predicting airplane."
+2. **Backward pass:** We select the class to explain (say, "ladder") and compute the gradient of its score y^c with respect to the feature maps. These gradients tell us how a small change at each spatial location in each channel would affect the ladder score. Large positive gradients mean "helpful for predicting ladder."
 
 3. **Global average pooling of gradients:** Average each channel's gradients over its 7×7 grid to get a single importance weight per channel:
    ```
@@ -407,7 +411,7 @@ After layer4, the spatial information is collapsed by global average pooling int
    ```
    L_GradCAM = ReLU( Σ_k α_k × A_k )
    ```
-   The ReLU clips negative values to zero — negative values correspond to features of *other* classes. When explaining "airplane", we don't want to highlight regions that look like "bicycle".
+   The ReLU clips negative values to zero — negative values correspond to features of *other* classes. When explaining "ladder", we don't want to highlight regions that look like "bicycle".
 
 5. **Upsampling:** The 7×7 heatmap is bilinearly interpolated to 224×224 to overlay on the original image.
 
@@ -416,13 +420,18 @@ After layer4, the spatial information is collapsed by global average pooling int
 **Limitations:** Coarse resolution (7×7 base) — shows *which region* matters but not *which specific pixels*. Tends to highlight only the most discriminative part of an object (e.g., the face but not the body). No formal mathematical guarantees.
 
 <p align="center">
-  <img src="docs/images/attribution_maps/gradcam_real_airplane.png" width="80%" alt="Grad-CAM example"/>
+  <img src="docs/images/attribution_maps/gradcam_real_tiger.png" width="45%" alt="Grad-CAM on real tiger"/>
+  <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM on real ladder"/>
 </p>
-<p align="center"><em>Grad-CAM on a real airplane — the broad red region correctly covers the aircraft body, but fine details are lost at 7×7 resolution.</em></p>
+<p align="center"><em>Grad-CAM on a real tiger (left) and a real ladder (right). The broad heatmap correctly covers the tiger's head/body and the ladder's A-frame structure, but fine details are lost at 7×7 resolution.</em></p>
+
+> **How to read these images:** Each attribution map shows three panels — **Original** (the input photo), **Heatmap** (the AI's attention map, where red = high importance, blue = low importance), and **Overlay** (the heatmap placed on top of the original so you can see exactly which parts the AI cared about). In the tiger example, notice how the red region sits right on the tiger's face and body — that's the AI saying "I see stripes and a feline shape here, so I predict tiger." The blue background means "this part didn't help me decide." For the ladder, the heatmap covers the rungs and rails — the distinctive structural features.
 
 ---
 
 ### Method 2: Grad-CAM++
+
+> **Plain English:** Grad-CAM is like asking someone "roughly where did you look?" — they point at the general area. Grad-CAM++ is like asking "show me *everything* that caught your eye." If you show the AI a photo with two cats, regular Grad-CAM might only highlight one cat. Grad-CAM++ would highlight both, because it pays attention to every part of the image that contributed to the "cat" prediction, not just the single strongest signal.
 
 An improved version of Grad-CAM that addresses two practical problems: (1) Grad-CAM often highlights only the most discriminative part of an object (face of a dog but not the body), and (2) it struggles when multiple instances of the same class appear (a flock of birds).
 
@@ -442,13 +451,18 @@ Grad-CAM asks: "On average across all positions, does this channel help predict 
 **Limitations:** Still limited to 7×7 resolution, higher-order gradients can be unstable for some architectures (works well for ResNets), still a heuristic without formal guarantees.
 
 <p align="center">
-  <img src="docs/images/attribution_maps/gradcampp_real_airplane.png" width="80%" alt="Grad-CAM++ example"/>
+  <img src="docs/images/attribution_maps/gradcampp_real_tiger.png" width="45%" alt="Grad-CAM++ on real tiger"/>
+  <img src="docs/images/attribution_maps/gradcampp_real_ladder.png" width="45%" alt="Grad-CAM++ on real ladder"/>
 </p>
-<p align="center"><em>Grad-CAM++ on the same airplane — note the broader, more complete coverage of all aircraft compared to Grad-CAM above.</em></p>
+<p align="center"><em>Grad-CAM++ on the same tiger (left) and ladder (right). Note the broader, more complete coverage — Grad-CAM++ highlights the full tiger body and the entire ladder structure compared to Grad-CAM's tighter focus.</em></p>
+
+> **Comparing Grad-CAM vs. Grad-CAM++:** Look at the tiger images above versus the Grad-CAM tiger in the previous section. Grad-CAM's red zone is concentrated around the face (the single most "tiger-like" feature). Grad-CAM++ spreads the red region across the full body — the face *and* the striped torso — giving a more complete picture of what the AI considers important. Think of it like this: Grad-CAM says "the face is the #1 reason I think tiger"; Grad-CAM++ says "the face, body, and stripes *all together* are why I think tiger." Both are still coarse (blocky), since they work from the same 7×7 grid.
 
 ---
 
 ### Method 3: Integrated Gradients
+
+> **Plain English:** Imagine you start with a completely black screen and slowly "fade in" the photograph, pixel by pixel. At some point during this fade-in, the AI suddenly goes "Oh! That's a tiger!" Integrated Gradients tracks *which pixels* caused that "aha moment." Unlike Grad-CAM (which gives you a blurry overview), this method gives you a *detailed, pixel-by-pixel* answer — it can point to individual stripes on a tiger or individual rungs on a ladder. The trade-off is that the result looks more like a scattered constellation of important dots rather than a clean highlighted region.
 
 A gradient-based attribution method with a formal axiomatic foundation. Unlike CAM-based methods that operate on intermediate feature maps, Integrated Gradients computes attributions directly at the **input pixel level**, producing 224×224 resolution.
 
@@ -492,15 +506,20 @@ Consider a pixel vital for recognizing a tiger's stripe. At the baseline (black)
 **Limitations:** Slow (101 forward+backward passes per image, ~100× slower than Grad-CAM), noisier heatmaps (full resolution with no smoothing), baseline-dependent (black vs. white vs. random can change results).
 
 <p align="center">
-  <img src="docs/images/attribution_maps/ig_real_airplane.png" width="80%" alt="Integrated Gradients example"/>
+  <img src="docs/images/attribution_maps/ig_real_tiger.png" width="45%" alt="Integrated Gradients on real tiger"/>
+  <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="Integrated Gradients on real ladder"/>
 </p>
-<p align="center"><em>Integrated Gradients on the same airplane — pixel-level detail picks up individual edges of the fuselage and wings, but the output is sparser and noisier.</em></p>
+<p align="center"><em>Integrated Gradients on the same tiger (left) and ladder (right). Pixel-level detail picks up individual stripes/fur texture on the tiger and individual rung edges on the ladder, but the output is sparser and noisier than CAM methods.</em></p>
+
+> **How to read IG maps:** The heatmap here looks very different from Grad-CAM — instead of large smooth red blobs, you see scattered bright spots and thin lines. Each bright spot is a specific pixel that the "fade-in" experiment identified as important. On the tiger, you can actually trace the outline of the stripes. On the ladder, individual rung edges light up as thin lines. The result is much more detailed than Grad-CAM (full 224×224 pixel resolution vs. a blurry 7×7 grid), but also noisier — your eye has to work harder to see the pattern. Think of it as the difference between a low-resolution satellite photo (Grad-CAM) and a high-resolution one with some static (IG).
 
 ---
 
 ### Method 4: LIME
 
 **Local Interpretable Model-agnostic Explanations**
+
+> **Plain English:** LIME works like a detective testing what matters in a photo. Imagine you have a photo the AI says is a "tiger." LIME chops the image into puzzle-piece-like regions (called superpixels), then plays a game: it covers up different combinations of pieces with grey and asks the AI "is this still a tiger?" each time. If covering the tiger's face makes the AI confused, that piece must be important. If covering a tree in the background changes nothing, that piece doesn't matter. After thousands of these experiments, LIME ranks each puzzle piece by how much the AI needs it. The key difference from all previous methods: **LIME doesn't need to know anything about how the AI works internally** — it just needs to be able to ask the AI questions and observe its answers.
 
 LIME takes a fundamentally different philosophy: it does *not* look inside the network at all. It treats the neural network as a complete **black box** and explains predictions by observing how the model's output changes when parts of the input are hidden.
 
@@ -533,23 +552,34 @@ LIME doesn't need access to weights, gradients, or architecture — just the abi
 **Limitations:** Slowest method (3,000 forward passes per image), inherently stochastic (different perturbations → slightly different explanations, though we fix `random_state=42`), superpixel-dependent (poor segmentation → poor explanations), local fidelity only.
 
 <p align="center">
-  <img src="docs/images/attribution_maps/lime_real_airplane.png" width="80%" alt="LIME example"/>
+  <img src="docs/images/attribution_maps/lime_real_tiger.png" width="45%" alt="LIME on real tiger"/>
+  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME on real ladder"/>
 </p>
-<p align="center"><em>LIME on the same airplane — superpixel regions are coloured by importance. The airplane bodies are clearly identified as the most important regions (warm colours).</em></p>
+<p align="center"><em>LIME on the same tiger (left) and ladder (right). Superpixel regions are coloured by importance — the tiger's body and the ladder's structure are clearly identified as the most important regions (warm colours).</em></p>
+
+> **How to read LIME maps:** LIME's output looks different from the other methods — instead of smooth heatmaps or scattered pixels, you see distinct coloured **regions** (the puzzle pieces/superpixels). Each region gets a single importance score. Warm colours (red, orange, yellow) mean "this region is very important for the prediction." Cool colours (blue, dark blue) mean "this region doesn't help." Notice how the coloured regions follow the natural boundaries of the image (edges of the tiger, edges of the ladder) — that's because the superpixel segmentation groups visually similar pixels together. The result is the most "human-readable" of all four methods: you can literally point at a coloured region and say "the AI needs this part."
+
+> **Quick comparison of all four methods at a glance:**
+> | | **Resolution** | **Speed** | **Analogy** |
+> |---|---|---|---|
+> | **Grad-CAM** | Coarse (blurry blobs) | Very fast | "Roughly where did you look?" |
+> | **Grad-CAM++** | Coarse (broader blobs) | Very fast | "Show me everything you noticed" |
+> | **Integrated Gradients** | Fine (individual pixels) | Slow | "Which exact pixels triggered your decision?" |
+> | **LIME** | Medium (puzzle pieces) | Very slow | "Which parts of the image do you actually need?" |
 
 ---
 
 ### All Four Methods Side-by-Side
 
 <p align="center">
-  <img src="docs/images/attribution_maps/gradcam_real_skull.png" width="45%" alt="Grad-CAM skull"/>
-  <img src="docs/images/attribution_maps/gradcampp_real_skull.png" width="45%" alt="Grad-CAM++ skull"/>
+  <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM ladder"/>
+  <img src="docs/images/attribution_maps/gradcampp_real_ladder.png" width="45%" alt="Grad-CAM++ ladder"/>
 </p>
 <p align="center">
-  <img src="docs/images/attribution_maps/ig_real_skull.png" width="45%" alt="IG skull"/>
-  <img src="docs/images/attribution_maps/lime_real_skull.png" width="45%" alt="LIME skull"/>
+  <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="IG ladder"/>
+  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME ladder"/>
 </p>
-<p align="center"><em>All four methods on a real skull (100% accuracy class). Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). All methods agree on the key features — eye sockets, nasal cavity, cranium outline.</em></p>
+<p align="center"><em>All four methods on a real ladder. Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). All methods agree on the key features — rungs, rails, and A-frame structure.</em></p>
 
 ---
 
@@ -785,7 +815,7 @@ The confusion matrices tell a vivid story of how the two models handle in-domain
 | firetruck | 100.0 | 0.974 | | feather | 86.00 | 0.860 |
 | spreadsheet | 100.0 | 0.987 | | suitcase | 86.05 | 0.914 |
 
-The real model excels at classes with highly distinctive visual features: *saxophone* has a unique metallic curved shape, *skull* has unmistakable eye sockets and jaw structure, and *trumpet* has a distinctive bell shape. The bottom performers reveal interesting failure patterns: *saw* (66.67%) is often confused with other elongated tools; *circle* and *triangle* lack the rich texture cues that the real model relies on; and *spoon* shares visual similarity with other utensils.
+The real model excels at classes with highly distinctive visual features: *saxophone* has a unique metallic curved shape, *ladder* has a distinctive A-frame structure with repeating rungs, and *trumpet* has a distinctive bell shape. The bottom performers reveal interesting failure patterns: *saw* (66.67%) is often confused with other elongated tools; *circle* and *triangle* lack the rich texture cues that the real model relies on; and *spoon* shares visual similarity with other utensils.
 
 #### Sketch Model (In-Domain: Sketch → Sketch)
 
@@ -819,29 +849,29 @@ Interestingly, *firetruck* drops from 100% in the real model to 57.58% in the sk
 
 For each model, attribution maps were generated for 20 images per class per domain (1,560 images per domain, 3,120 total per model). Each attribution is saved as a three-panel image: original | heatmap (jet colourmap) | overlay. Below are representative examples that illustrate how the four methods compare and what the models focus on.
 
-### Real Airplane — All Four Methods (Real Model)
+### Real Ladder — All Four Methods (Real Model)
 
 <p align="center">
-  <img src="docs/images/attribution_maps/gradcam_real_airplane.png" width="45%" alt="Grad-CAM airplane"/>
-  <img src="docs/images/attribution_maps/gradcampp_real_airplane.png" width="45%" alt="Grad-CAM++ airplane"/>
+  <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM ladder"/>
+  <img src="docs/images/attribution_maps/gradcampp_real_ladder.png" width="45%" alt="Grad-CAM++ ladder"/>
 </p>
 <p align="center">
-  <img src="docs/images/attribution_maps/ig_real_airplane.png" width="45%" alt="IG airplane"/>
-  <img src="docs/images/attribution_maps/lime_real_airplane.png" width="45%" alt="LIME airplane"/>
+  <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="IG ladder"/>
+  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME ladder"/>
 </p>
-<p align="center"><em>All four methods on a real airplane (real model). Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the aircraft body. Integrated Gradients provides pixel-level detail, highlighting specific edges of the fuselage and wings. LIME identifies superpixel regions covering the body and sky boundary. All four methods agree on the general region of interest.</em></p>
+<p align="center"><em>All four methods on a real ladder (real model). Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the ladder structure. Integrated Gradients provides pixel-level detail, highlighting specific edges of the rungs and rails. LIME identifies superpixel regions covering the ladder and background boundary. All four methods agree on the general region of interest.</em></p>
 
-### Sketch Airplane — All Four Methods (Sketch Model)
+### Sketch Lighthouse — All Four Methods (Sketch Model)
 
 <p align="center">
-  <img src="docs/images/attribution_maps/sketch_model/gradcam_sketch_airplane.png" width="45%" alt="Grad-CAM sketch airplane"/>
-  <img src="docs/images/attribution_maps/sketch_model/gradcampp_sketch_airplane.png" width="45%" alt="Grad-CAM++ sketch airplane"/>
+  <img src="docs/images/attribution_maps/sketch_model/gradcam_sketch_lighthouse.png" width="45%" alt="Grad-CAM sketch lighthouse"/>
+  <img src="docs/images/attribution_maps/sketch_model/gradcampp_sketch_lighthouse.png" width="45%" alt="Grad-CAM++ sketch lighthouse"/>
 </p>
 <p align="center">
-  <img src="docs/images/attribution_maps/sketch_model/ig_sketch_airplane.png" width="45%" alt="IG sketch airplane"/>
-  <img src="docs/images/attribution_maps/sketch_model/lime_sketch_airplane.png" width="45%" alt="LIME sketch airplane"/>
+  <img src="docs/images/attribution_maps/sketch_model/ig_sketch_lighthouse.png" width="45%" alt="IG sketch lighthouse"/>
+  <img src="docs/images/attribution_maps/sketch_model/lime_sketch_lighthouse.png" width="45%" alt="LIME sketch lighthouse"/>
 </p>
-<p align="center"><em>All four methods on a sketch airplane (sketch model). On sketches, Grad-CAM focuses on the overall shape contour rather than texture details — consistent with the sketch model learning structural features. Integrated Gradients traces specific line strokes of the drawing. LIME highlights the superpixel regions that contain the drawn lines.</em></p>
+<p align="center"><em>All four methods on a sketch lighthouse (sketch model). On sketches, Grad-CAM focuses on the tower silhouette rather than texture details — consistent with the sketch model learning structural features. Integrated Gradients traces specific line strokes of the drawing. LIME highlights the superpixel regions covering the tower and light structure.</em></p>
 
 ### Real Tiger — All Four Methods (Real Model, 98.36% accuracy)
 
@@ -913,17 +943,17 @@ One of the most important questions in this project is whether the real model an
 </p>
 <p align="center"><em>Grad-CAM on a sketch bicycle — Real model (left) vs. Sketch model (right). The sketch model produces a more focused, confident heatmap centred on the bicycle's structural features — wheels, frame, handlebars. The real model produces a more diffuse, uncertain heatmap, reflecting its difficulty in recognising the object without texture cues.</em></p>
 
-### Sketch Skull: Real Model vs. Sketch Model
+### Sketch Banana: Real Model vs. Sketch Model
 
 <p align="center">
-  <img src="docs/images/attribution_maps/cross_domain/gradcam_real_model_sketch_skull.png" width="45%" alt="Real model Grad-CAM on sketch skull"/>
-  <img src="docs/images/attribution_maps/cross_domain/gradcam_sketch_model_sketch_skull.png" width="45%" alt="Sketch model Grad-CAM on sketch skull"/>
+  <img src="docs/images/attribution_maps/cross_domain/gradcam_real_model_sketch_banana.png" width="45%" alt="Real model Grad-CAM on sketch banana"/>
+  <img src="docs/images/attribution_maps/cross_domain/gradcam_sketch_model_sketch_banana.png" width="45%" alt="Sketch model Grad-CAM on sketch banana"/>
 </p>
 <p align="center">
-  <img src="docs/images/attribution_maps/cross_domain/ig_real_model_sketch_skull.png" width="45%" alt="Real model IG on sketch skull"/>
-  <img src="docs/images/attribution_maps/cross_domain/ig_sketch_model_sketch_skull.png" width="45%" alt="Sketch model IG on sketch skull"/>
+  <img src="docs/images/attribution_maps/cross_domain/ig_real_model_sketch_banana.png" width="45%" alt="Real model IG on sketch banana"/>
+  <img src="docs/images/attribution_maps/cross_domain/ig_sketch_model_sketch_banana.png" width="45%" alt="Sketch model IG on sketch banana"/>
 </p>
-<p align="center"><em>Sketch skull: real model (left) vs. sketch model (right). Top: Grad-CAM. Bottom: Integrated Gradients. The sketch model produces sharper, more confident attributions because it was trained on similar line-art images. The real model's attributions are more scattered, suggesting uncertainty about which features to rely on in an unfamiliar visual style.</em></p>
+<p align="center"><em>Sketch banana: real model (left) vs. sketch model (right). Top: Grad-CAM. Bottom: Integrated Gradients. The sketch model produces sharper, more confident attributions because it was trained on similar line-art images. The real model's attributions are more scattered, suggesting uncertainty about which features to rely on in an unfamiliar visual style.</em></p>
 
 ### Sketch Tiger: Real Model vs. Sketch Model
 
@@ -1060,8 +1090,8 @@ Feature vectors (2048-D) from the penultimate layer were projected to 2D using t
 
 This is where the story comes together. The representation analysis provides the *mechanistic explanation* for why the two models transfer so differently:
 
-- **The real model separates domains:** In its feature space, real and sketch images form distinct clusters even for the same class. The model has learned separate representations for "photo of airplane" and "sketch of airplane". This domain separation directly explains the 37-point accuracy drop when transferring to sketches — the model maps sketch images to unfamiliar locations in feature space.
-- **The sketch model mixes domains:** Real and sketch images are interleaved, with same-class images from both domains occupying overlapping regions. The model has learned a single, unified representation for "airplane" regardless of whether it's a photo or a sketch. This domain-invariant organization explains the sketch model's superior transfer.
+- **The real model separates domains:** In its feature space, real and sketch images form distinct clusters even for the same class. The model has learned separate representations for "photo of ladder" and "sketch of ladder". This domain separation directly explains the 37-point accuracy drop when transferring to sketches — the model maps sketch images to unfamiliar locations in feature space.
+- **The sketch model mixes domains:** Real and sketch images are interleaved, with same-class images from both domains occupying overlapping regions. The model has learned a single, unified representation for "ladder" regardless of whether it's a photo or a sketch. This domain-invariant organization explains the sketch model's superior transfer.
 - **Class structure is preserved in both:** Despite differences in domain separation, both models produce coherent class clusters, confirming that the 81-class classification task has been learned.
 - These visualizations provide **direct evidence for the shape bias hypothesis**: sketch training creates a domain-agnostic feature space (shape-based), while real training encodes domain identity (texture-based) alongside class identity.
 

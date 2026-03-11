@@ -1006,7 +1006,7 @@ spreadsheet       & 100.0 & 0.987 & suitcase   & 86.05 & 0.914 \\
 
 \textbf{Analysis:} The real model excels at classes with highly distinctive
 visual features: \emph{saxophone} has a unique metallic curved shape,
-\emph{skull} has unmistakable eye sockets and jaw structure, and \emph{trumpet}
+\emph{ladder} has a distinctive A-frame structure with repeating rungs, and \emph{trumpet}
 has a distinctive bell shape.  The bottom performers reveal interesting failure
 patterns: \emph{saw} (66.67\%) is often confused with other elongated tools;
 \emph{circle} and \emph{triangle} lack the rich texture cues that the
@@ -1064,8 +1064,8 @@ prediction.  \textbf{Attribution methods} (also called \emph{saliency methods})
 address this by assigning an importance score to every spatial location in the
 input image.  The result is a \textbf{heatmap} that highlights the pixels or
 regions that were most influential to the model's decision.  For example, if
-the model predicts ``airplane'', the heatmap should highlight the wings and
-fuselage rather than the background sky.
+the model predicts ``ladder'', the heatmap should highlight the rungs and
+rails rather than the background.
 
 In this project we apply four complementary attribution methods.  Each takes a
 different approach to the same question:
@@ -1116,12 +1116,12 @@ learned and \emph{where} in the image each concept appears.
           shape'', etc.
 
     \item \textbf{Backward pass:} We select the class we want to explain (say,
-          ``airplane'') and compute the gradient of its score $y^c$ with
+          ``ladder'') and compute the gradient of its score $y^c$ with
           respect to the feature maps:
           $\frac{\partial y^c}{\partial \mathbf{A}}$.  These gradients tell us
           how a small change at each spatial location in each feature channel
-          would affect the airplane score.  Channels and locations with large
-          positive gradients are ``helpful'' for predicting airplane.
+          would affect the ladder score.  Channels and locations with large
+          positive gradients are ``helpful'' for predicting ladder.
 
     \item \textbf{Global average pooling of gradients:} We average each
           channel's gradients over its $7 \times 7$ spatial grid to get a
@@ -1142,7 +1142,7 @@ learned and \emph{where} in the image each concept appears.
           The ReLU (Rectified Linear Unit) clips negative values to zero.
           This is important: negative values correspond to features that
           belong to \emph{other} classes, not the one we are explaining.
-          For example, if we ask ``why airplane?'', we do not want the
+          For example, if we ask ``why ladder?'', we do not want the
           heatmap to highlight regions that look like ``bicycle''.
 
     \item \textbf{Upsampling:} The resulting $7 \times 7$ heatmap is bilinearly
@@ -1540,7 +1540,7 @@ faithful).
 \subsubsection{Axis 3: Cross-Domain Consistency}
 
 \textbf{Question:} When the model sees a photograph and a sketch of the same
-class (e.g., a photo of an airplane and a drawing of an airplane), does it
+class (e.g., a photo of a ladder and a drawing of a ladder), does it
 focus on the same spatial features?
 
 For each class, we average the attribution maps across all real images and all
@@ -1573,105 +1573,105 @@ domain (1{,}560 images per domain, 3{,}120 total per model).  Each attribution
 is saved as a three-panel image: original $|$ heatmap (jet colourmap) $|$
 overlay.
 
-% ── Airplane comparison (Real Model, Real Domain) ─────────────────────────
+% ── Tiger comparison (Real Model, Real Domain) ─────────────────────────
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/airplane_0040.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/tiger_1405.png}
     \caption{Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam_pp/real/airplane_0040.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam_pp/real/tiger_1405.png}
     \caption{Grad-CAM++}
 \end{subfigure}
 
 \vspace{0.3cm}
 
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/airplane_0040.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/tiger_1405.png}
     \caption{Integrated Gradients}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/airplane_0040.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/tiger_1405.png}
     \caption{LIME}
 \end{subfigure}
-\caption{\textbf{All four methods on a real airplane} (real model).
+\caption{\textbf{All four methods on a real tiger} (real model).
 Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the
-aircraft body --- they correctly identify \emph{where} the airplane is but
+tiger's head and body --- they correctly identify \emph{where} the tiger is but
 with coarse spatial resolution.  Integrated Gradients provides pixel-level
-detail, highlighting specific edges of the fuselage and wings.  LIME
-identifies superpixel regions covering the body and sky boundary.  All four
+detail, highlighting specific stripe patterns and fur texture.  LIME
+identifies superpixel regions covering the body and background boundary.  All four
 methods agree on the general region of interest, indicating good explanations.}
-\label{fig:attr_airplane_real}
+\label{fig:attr_tiger_intro}
 \end{figure}
 
-% ── Airplane comparison (Sketch Model, Sketch Domain) ─────────────────────
+% ── Lighthouse comparison (Sketch Model, Sketch Domain) ─────────────────────
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/airplane_0042.png}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/lighthouse_0623.png}
     \caption{Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam_pp/sketch/airplane_0042.png}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam_pp/sketch/lighthouse_0623.png}
     \caption{Grad-CAM++}
 \end{subfigure}
 
 \vspace{0.3cm}
 
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/airplane_0042.png}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/lighthouse_0623.png}
     \caption{Integrated Gradients}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/sketch/airplane_0042.png}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/sketch/lighthouse_0623.png}
     \caption{LIME}
 \end{subfigure}
-\caption{\textbf{All four methods on a sketch airplane} (sketch model).
-On sketches, Grad-CAM focuses on the overall shape contour rather than
+\caption{\textbf{All four methods on a sketch lighthouse} (sketch model).
+On sketches, Grad-CAM focuses on the tower silhouette rather than
 texture details --- consistent with the sketch model learning structural
 features.  Integrated Gradients traces specific line strokes of the drawing.
-LIME highlights the superpixel regions that contain the drawn lines.}
-\label{fig:attr_airplane_sketch}
+LIME highlights the superpixel regions covering the tower and light structure.}
+\label{fig:attr_lighthouse_sketch}
 \end{figure}
 
-% ── Skull: all 4 methods, real model, real domain ─────────────────────────
+% ── Ladder: all 4 methods, real model, real domain ─────────────────────────
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/skull_1025.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/ladder_0558.png}
     \caption{Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam_pp/real/skull_1025.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam_pp/real/ladder_0558.png}
     \caption{Grad-CAM++}
 \end{subfigure}
 
 \vspace{0.3cm}
 
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/skull_1025.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/ladder_0558.png}
     \caption{Integrated Gradients}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/skull_1025.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/ladder_0558.png}
     \caption{LIME}
 \end{subfigure}
-\caption{\textbf{All four methods on a real skull} (real model).
-The skull achieves 100\% accuracy, and the explanations confirm the model
-is focusing on the correct features.  Grad-CAM highlights the eye socket
-and nasal cavity region.  Grad-CAM++ provides broader coverage of the
-cranium.  Integrated Gradients picks up fine bone texture and edge details.
-LIME identifies the skull outline as the key superpixel region.  These are
+\caption{\textbf{All four methods on a real ladder} (real model).
+The ladder is a structurally distinctive class, and the explanations confirm the model
+is focusing on the correct features.  Grad-CAM highlights the central
+rung and rail region.  Grad-CAM++ provides broader coverage of the
+A-frame structure.  Integrated Gradients picks up fine edge details along individual rungs.
+LIME identifies the ladder outline as the key superpixel region.  These are
 examples of \emph{high-quality explanations} --- all methods agree and focus
 on semantically meaningful features.}
-\label{fig:attr_skull_real}
+\label{fig:attr_ladder_real}
 \end{figure}
 
 % ── Tiger: all 4 methods, real model, real domain ─────────────────────────
@@ -1792,36 +1792,36 @@ difficulty in recognising the object without texture cues.}
 \label{fig:attr_cross_bicycle}
 \end{figure}
 
-% ── Sketch domain: skull across models ────────────────────────────────────
+% ── Sketch domain: banana across models ────────────────────────────────────
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/sketch/skull_1001.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/sketch/banana_0094.png}
     \caption{Real model --- Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/skull_1001.png}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/banana_0094.png}
     \caption{Sketch model --- Grad-CAM}
 \end{subfigure}
 
 \vspace{0.3cm}
 
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/sketch/skull_1001.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/sketch/banana_0094.png}
     \caption{Real model --- Integrated Gradients}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/skull_1001.png}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/banana_0094.png}
     \caption{Sketch model --- Integrated Gradients}
 \end{subfigure}
-\caption{\textbf{Sketch skull: real model vs.\ sketch model.}
+\caption{\textbf{Sketch banana: real model vs.\ sketch model.}
 The sketch model produces sharper, more confident attributions because it was
 trained on similar line-art images.  The real model's attributions are more
 scattered, suggesting uncertainty about which features to rely on in an
 unfamiliar visual style.}
-\label{fig:attr_skull_cross}
+\label{fig:attr_banana_cross}
 \end{figure}
 
 % ── Saxophone: sketch domain, all methods, sketch model ──────────────────
@@ -2581,7 +2581,7 @@ resolution are more stable under perturbation.}
 \subsection{Explanation Quality Under Domain Shift}
 
 Our cross-domain attribution comparisons (Figures~\ref{fig:attr_cross_bicycle},
-\ref{fig:attr_skull_cross}, \ref{fig:attr_tiger_cross}) and the quantitative
+\ref{fig:attr_banana_cross}, \ref{fig:attr_tiger_cross}) and the quantitative
 faithfulness results (Section~\ref{sec:faithfulness}) confirm that
 \textbf{domain shift degrades explanation quality}, not just classification
 accuracy.  When the real model is applied to sketches:
