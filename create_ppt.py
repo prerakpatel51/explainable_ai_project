@@ -417,10 +417,31 @@ for i, (name, color, lines) in enumerate(method_info):
 snum(s, 8)
 
 # ================================================================
-# SLIDES 9-14: Attribution Map Image Slides
-# One slide per class, 4 methods in a row
+# SLIDES 9+: Attribution Map Image Slides
+# One slide per class, 2x2 grid layout (Grad-CAM, Grad-CAM++, IG, LIME)
 # ================================================================
 slide_counter = [9]
+
+def add_2x2_grid(s, model, domain, cls_name, y_start=1.7):
+    """Add a 2x2 grid of attribution maps: top-left Grad-CAM, top-right Grad-CAM++,
+    bottom-left IG, bottom-right LIME. Each image has a method label above it."""
+    iw = 5.8; ih_label = 0.35; gap_x = 0.4; gap_y = 0.15
+    total_w = 2 * iw + gap_x
+    start_x = (13.333 - total_w) / 2
+    row_h = 1.95  # image height approximation for the grid
+    positions = [
+        (0, 0),  # top-left: Grad-CAM
+        (0, 1),  # top-right: Grad-CAM++
+        (1, 0),  # bottom-left: IG
+        (1, 1),  # bottom-right: LIME
+    ]
+    for idx, (mname, mdir) in enumerate(METHODS):
+        row, col = positions[idx]
+        x = start_x + col * (iw + gap_x)
+        y = y_start + row * (row_h + ih_label + gap_y)
+        tb(s, x, y, iw, ih_label, mname, 16, ACCENT, True, PP_ALIGN.CENTER)
+        p = get_img_path(model, mdir, domain, cls_name)
+        img(s, p, x, y + ih_label, w=iw)
 
 # --- Real Model on Real Domain ---
 for cls in ['ladder', 'lion', 'tiger', 'lighthouse', 'banana', 'spider']:
@@ -428,13 +449,7 @@ for cls in ['ladder', 'lion', 'tiger', 'lighthouse', 'banana', 'spider']:
     title(s, "Real Model — Real Domain (In-Domain)")
     pretty = cls.replace('_', ' ').title()
     tb(s, 0.5, 1.2, 12.3, 0.4, f"Class: {pretty}", 24, YELLOW, True, PP_ALIGN.CENTER)
-    iw = 2.9; gap = 0.2; start_x = (13.333 - 4 * iw - 3 * gap) / 2
-    for i, (mname, mdir) in enumerate(METHODS):
-        x = start_x + i * (iw + gap)
-        tb(s, x, 1.7, iw, 0.35, mname, 17, ACCENT, True, PP_ALIGN.CENTER)
-        p = get_img_path('real_model', mdir, 'real', cls)
-        img(s, p, x, 2.1, w=iw)
-    # Analysis at bottom
+    add_2x2_grid(s, 'real_model', 'real', cls, y_start=1.7)
     analyses = {
         'ladder': "Grad-CAM highlights the rungs and rails. Grad-CAM++ covers the full A-frame structure. IG shows fine pixel attributions along edges. LIME selects key superpixels around the ladder shape.",
         'lion': "All methods focus on the lion's face/mane — the most class-discriminative region. IG provides finer detail on facial features. LIME highlights mane superpixels.",
@@ -443,7 +458,7 @@ for cls in ['ladder', 'lion', 'tiger', 'lighthouse', 'banana', 'spider']:
         'banana': "Compact object — all methods agree on the banana shape. Grad-CAM/++ produce clean, focused heatmaps. IG shows detailed peel texture attribution.",
         'spider': "Focus on the spider body and legs. IG highlights individual leg strands at pixel level. LIME's superpixel boundaries may split the thin legs across regions.",
     }
-    c2 = card(s, 0.5, 5.7, 12.3, 1.1, ORANGE)
+    c2 = card(s, 0.5, 6.0, 12.3, 1.1, ORANGE)
     tf2 = c2.text_frame; tf2.word_wrap = True; tf2.margin_left = Inches(0.15); tf2.margin_top = Inches(0.08)
     p2 = tf2.paragraphs[0]; p2.text = f"Analysis: {pretty}"; p2.font.size = Pt(16); p2.font.color.rgb = ORANGE; p2.font.bold = True
     p2 = tf2.add_paragraph(); p2.text = analyses.get(cls, ""); p2.font.size = Pt(14); p2.font.color.rgb = WHITE
@@ -456,23 +471,17 @@ for cls in ['ladder', 'tiger', 'bicycle', 'lion']:
     pretty = cls.replace('_', ' ').title()
     tb(s, 0.5, 1.2, 12.3, 0.4, f"Class: {pretty}", 24, YELLOW, True, PP_ALIGN.CENTER)
     tb(s, 0.5, 1.55, 12.3, 0.3, "How does the Real-trained model explain sketch images it was never trained on?", 15, LGRAY, False, PP_ALIGN.CENTER)
-    iw = 2.9; gap = 0.2; start_x = (13.333 - 4 * iw - 3 * gap) / 2
-    for i, (mname, mdir) in enumerate(METHODS):
-        x = start_x + i * (iw + gap)
-        tb(s, x, 1.95, iw, 0.35, mname, 17, ACCENT, True, PP_ALIGN.CENTER)
-        p = get_img_path('real_model', mdir, 'sketch', cls)
-        img(s, p, x, 2.3, w=iw)
+    add_2x2_grid(s, 'real_model', 'sketch', cls, y_start=1.9)
     cross_analyses = {
         'ladder': "The real model still focuses on the ladder shape but with more diffuse, less confident attribution — it recognizes the form but misses texture cues.",
         'tiger': "Attribution is spread more broadly. The real model struggles to lock onto the tiger without its stripe texture. Grad-CAM shows weaker, less focused hotspots.",
         'bicycle': "Wheel shapes are still detected, but attribution is noisier. LIME struggles with the sparse line structure of sketch bicycles.",
         'lion': "The model finds the lion outline but with weaker confidence. Without the mane texture, Grad-CAM highlights are more dispersed.",
     }
-    c2 = card(s, 0.5, 5.7, 12.3, 1.3, RED)
+    c2 = card(s, 0.5, 6.2, 12.3, 1.0, RED)
     tf2 = c2.text_frame; tf2.word_wrap = True; tf2.margin_left = Inches(0.15); tf2.margin_top = Inches(0.08)
     p2 = tf2.paragraphs[0]; p2.text = f"Cross-Domain Analysis: {pretty}"; p2.font.size = Pt(16); p2.font.color.rgb = RED; p2.font.bold = True
     p2 = tf2.add_paragraph(); p2.text = cross_analyses.get(cls, ""); p2.font.size = Pt(14); p2.font.color.rgb = WHITE
-    p2 = tf2.add_paragraph(); p2.text = "The real-trained model produces less focused, more diffuse attributions on sketch data — evidence that texture-based features are missing."; p2.font.size = Pt(14); p2.font.color.rgb = LGRAY
     snum(s, slide_counter[0]); slide_counter[0] += 1
 
 # --- Sketch Model on Sketch Domain (in-domain) ---
@@ -481,12 +490,7 @@ for cls in ['ladder', 'tiger', 'bicycle', 'saxophone', 'lion', 'scissors']:
     title(s, "Sketch Model — Sketch Domain (In-Domain)")
     pretty = cls.replace('_', ' ').title()
     tb(s, 0.5, 1.2, 12.3, 0.4, f"Class: {pretty}", 24, YELLOW, True, PP_ALIGN.CENTER)
-    iw = 2.9; gap = 0.2; start_x = (13.333 - 4 * iw - 3 * gap) / 2
-    for i, (mname, mdir) in enumerate(METHODS):
-        x = start_x + i * (iw + gap)
-        tb(s, x, 1.7, iw, 0.35, mname, 17, ACCENT, True, PP_ALIGN.CENTER)
-        p = get_img_path('sketch_model', mdir, 'sketch', cls)
-        img(s, p, x, 2.1, w=iw)
+    add_2x2_grid(s, 'sketch_model', 'sketch', cls, y_start=1.7)
     sk_analyses = {
         'ladder': "Sketch model focuses cleanly on the ladder outline. IG highlights individual pen strokes. Grad-CAM++ covers the full A-frame shape precisely.",
         'tiger': "Strong focus on the tiger body outline. The model learned to recognize the overall shape without relying on stripe texture.",
@@ -495,7 +499,7 @@ for cls in ['ladder', 'tiger', 'bicycle', 'saxophone', 'lion', 'scissors']:
         'lion': "Mane outline and face highlighted. Without texture, the model relies on the distinctive mane silhouette.",
         'scissors': "The blades and handles are clearly distinguished. All methods focus on the crossed blade shape as the key feature.",
     }
-    c2 = card(s, 0.5, 5.7, 12.3, 1.1, GREEN)
+    c2 = card(s, 0.5, 6.0, 12.3, 1.1, GREEN)
     tf2 = c2.text_frame; tf2.word_wrap = True; tf2.margin_left = Inches(0.15); tf2.margin_top = Inches(0.08)
     p2 = tf2.paragraphs[0]; p2.text = f"Analysis: {pretty}"; p2.font.size = Pt(16); p2.font.color.rgb = GREEN; p2.font.bold = True
     p2 = tf2.add_paragraph(); p2.text = sk_analyses.get(cls, ""); p2.font.size = Pt(14); p2.font.color.rgb = WHITE
@@ -508,12 +512,7 @@ for cls in ['ladder', 'tiger', 'lion', 'banana', 'lighthouse', 'bicycle']:
     pretty = cls.replace('_', ' ').title()
     tb(s, 0.5, 1.2, 12.3, 0.4, f"Class: {pretty}", 24, YELLOW, True, PP_ALIGN.CENTER)
     tb(s, 0.5, 1.55, 12.3, 0.3, "Sketch-trained model explains real photos — the successful transfer case!", 15, LGRAY, False, PP_ALIGN.CENTER)
-    iw = 2.9; gap = 0.2; start_x = (13.333 - 4 * iw - 3 * gap) / 2
-    for i, (mname, mdir) in enumerate(METHODS):
-        x = start_x + i * (iw + gap)
-        tb(s, x, 1.95, iw, 0.35, mname, 17, ACCENT, True, PP_ALIGN.CENTER)
-        p = get_img_path('sketch_model', mdir, 'real', cls)
-        img(s, p, x, 2.3, w=iw)
+    add_2x2_grid(s, 'sketch_model', 'real', cls, y_start=1.9)
     sr_analyses = {
         'ladder': "Clean, focused attribution on the ladder — the sketch-trained model's shape features transfer perfectly to the real photo.",
         'tiger': "The model highlights the tiger shape effectively despite never seeing real tiger photos during training. Shape features generalize.",
@@ -522,12 +521,50 @@ for cls in ['ladder', 'tiger', 'lion', 'banana', 'lighthouse', 'bicycle']:
         'lighthouse': "Tower structure clearly identified. Shape-based features transfer seamlessly from sketch to the real lighthouse photo.",
         'bicycle': "Wheels and frame detected with high precision. The geometric shape features from sketch training generalize perfectly.",
     }
-    c2 = card(s, 0.5, 5.7, 12.3, 1.3, GREEN)
+    c2 = card(s, 0.5, 6.2, 12.3, 1.0, GREEN)
     tf2 = c2.text_frame; tf2.word_wrap = True; tf2.margin_left = Inches(0.15); tf2.margin_top = Inches(0.08)
     p2 = tf2.paragraphs[0]; p2.text = f"Cross-Domain Success: {pretty}"; p2.font.size = Pt(16); p2.font.color.rgb = GREEN; p2.font.bold = True
     p2 = tf2.add_paragraph(); p2.text = sr_analyses.get(cls, ""); p2.font.size = Pt(14); p2.font.color.rgb = WHITE
-    p2 = tf2.add_paragraph(); p2.text = "The sketch model produces focused, confident attributions on real images — its shape-based learning generalizes across domains."; p2.font.size = Pt(14); p2.font.color.rgb = LGRAY
     snum(s, slide_counter[0]); slide_counter[0] += 1
+
+# ================================================================
+# FAILURE CASE: Where the model gets it wrong and explanations are bad
+# ================================================================
+s = prs.slides.add_slide(prs.slide_layouts[6]); add_bg(s)
+title(s, "When Explanations Go Wrong — Failure Analysis")
+tb(s, 0.5, 1.15, 12.3, 0.4, "Class: Saw (Worst performer — 66.67% accuracy, Real Model)", 22, RED, True, PP_ALIGN.CENTER)
+tb(s, 0.5, 1.55, 12.3, 0.3, "The model misclassifies and the explanations reveal WHY it fails", 15, LGRAY, False, PP_ALIGN.CENTER)
+
+# 2x2 grid: top row = real saw, bottom row = sketch saw
+# Top-left: Grad-CAM real saw, Top-right: LIME real saw
+# Bottom-left: Grad-CAM sketch saw, Bottom-right: LIME sketch saw
+fail_iw = 5.8; fail_gap = 0.4
+fail_sx = (13.333 - 2 * fail_iw - fail_gap) / 2
+# Row 1: Real domain
+tb(s, fail_sx, 1.9, fail_iw, 0.3, "Real Domain — Grad-CAM", 15, ACCENT, True, PP_ALIGN.CENTER)
+img(s, f"{XAI_OUT}/real_model/attribution_maps/gradcam/real/saw_0813.png", fail_sx, 2.2, w=fail_iw)
+tb(s, fail_sx + fail_iw + fail_gap, 1.9, fail_iw, 0.3, "Real Domain — LIME", 15, ACCENT, True, PP_ALIGN.CENTER)
+img(s, f"{XAI_OUT}/real_model/attribution_maps/lime/real/saw_0813.png", fail_sx + fail_iw + fail_gap, 2.2, w=fail_iw)
+# Row 2: Sketch domain
+tb(s, fail_sx, 3.95, fail_iw, 0.3, "Sketch Domain — Grad-CAM", 15, ACCENT, True, PP_ALIGN.CENTER)
+img(s, f"{XAI_OUT}/real_model/attribution_maps/gradcam/sketch/saw_0790.png", fail_sx, 4.25, w=fail_iw)
+tb(s, fail_sx + fail_iw + fail_gap, 3.95, fail_iw, 0.3, "Sketch Domain — LIME", 15, ACCENT, True, PP_ALIGN.CENTER)
+img(s, f"{XAI_OUT}/real_model/attribution_maps/lime/sketch/saw_0790.png", fail_sx + fail_iw + fail_gap, 4.25, w=fail_iw)
+
+# Analysis card
+c2 = card(s, 0.3, 5.85, 12.7, 1.5, RED)
+tf2 = c2.text_frame; tf2.word_wrap = True; tf2.margin_left = Inches(0.15); tf2.margin_top = Inches(0.08)
+p2 = tf2.paragraphs[0]; p2.text = "Why Does the Model Fail?"; p2.font.size = Pt(18); p2.font.color.rgb = RED; p2.font.bold = True
+fail_lines = [
+    ("Visual ambiguity: ", "Saws share elongated shapes with screwdrivers, swords, and knives — the model confuses them because it relies on overall shape rather than fine-grained tooth patterns."),
+    ("Sketch failure: ", "The sketch contains multiple tools (hammer, wrench, saw). Grad-CAM highlights the WRENCH, not the saw — the model attends to the wrong object entirely."),
+    ("Explanation quality degrades with accuracy: ", "When the model is uncertain, attributions become diffuse and scattered. Poor predictions produce poor explanations — you cannot trust the explanation of a wrong answer."),
+]
+for label, detail in fail_lines:
+    p2 = tf2.add_paragraph()
+    r = p2.add_run(); r.text = label; r.font.size = Pt(13); r.font.color.rgb = ORANGE; r.font.bold = True
+    r2 = p2.add_run(); r2.text = detail; r2.font.size = Pt(13); r2.font.color.rgb = WHITE
+snum(s, slide_counter[0]); slide_counter[0] += 1
 
 # ================================================================
 # Cross-Domain Comparison: Same sketch, both models side by side
