@@ -849,7 +849,7 @@ Interestingly, *firetruck* drops from 100% in the real model to 57.58% in the sk
 
 For each model, attribution maps were generated for 20 images per class per domain (1,560 images per domain, 3,120 total per model). Each attribution is saved as a three-panel image: original | heatmap (jet colourmap) | overlay. Below are representative examples that illustrate how the four methods compare and what the models focus on.
 
-### sketch ladder — All Four Methods (Real Model)
+### Real ladder — All Four Methods (Real Model)
 
 <p align="center">
   <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM ladder"/>
@@ -859,7 +859,7 @@ For each model, attribution maps were generated for 20 images per class per doma
   <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="IG ladder"/>
   <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME ladder"/>
 </p>
-<p align="center"><em>All four methods on a sketch ladder (real model). Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the ladder structure. Integrated Gradients provides pixel-level detail, highlighting specific edges of the rungs and rails. LIME identifies superpixel regions covering the ladder and background boundary. All four methods agree on the general region of interest.</em></p>
+<p align="center"><em>All four methods on a real ladder (real model). Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the ladder structure. Integrated Gradients provides pixel-level detail, highlighting specific edges of the rungs and rails. LIME identifies superpixel regions covering the ladder and background boundary. All four methods agree on the general region of interest.</em></p>
 
 ### Sketch Lighthouse — All Four Methods (Sketch Model)
 
