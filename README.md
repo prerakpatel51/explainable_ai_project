@@ -576,10 +576,10 @@ LIME doesn't need access to weights, gradients, or architecture — just the abi
   <img src="docs/images/attribution_maps/gradcampp_real_ladder.png" width="45%" alt="Grad-CAM++ ladder"/>
 </p>
 <p align="center">
-  <img src="docs/images/attribution_maps/ig_sketch_ladder.png" width="45%" alt="IG ladder"/>
-  <img src="docs/images/attribution_maps/lime_sketch_ladder.png" width="45%" alt="LIME ladder"/>
+  <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="IG ladder"/>
+  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME ladder"/>
 </p>
-<p align="center"><em>All four methods on a sketch ladder. Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). All methods agree on the key features — rungs, rails, and A-frame structure.</em></p>
+<p align="center"><em>All four methods on a real ladder. Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). All methods agree on the key features — rungs, rails, and A-frame structure.</em></p>
 
 ---
 
