@@ -118,7 +118,7 @@ After balancing, the final dataset splits look like this:
 | Domain | Train  | Val   | Test  |
 |--------|--------|-------|-------|
 | Real   | 29,501 | 3,515 | 3,515 |
-| Sketch | 29,501 | 2,724 | 2,724 |
+| Sketch | 29,501 | 3,515 | 3,515 |
 
 ---
 

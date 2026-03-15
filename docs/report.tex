@@ -66,8 +66,8 @@ This report presents a comprehensive study on the reliability and consistency
 of Explainable Artificial Intelligence (XAI) attribution methods applied to
 deep neural networks trained on different visual domains.  We train two
 independent \textbf{ResNet-152} classifiers on 81 classes from the DomainNet
-benchmark --- one on photographic (\textit{real}) images and one on hand-drawn
-(\textit{sketch}) images --- and apply four attribution methods: \textbf{Grad-CAM},
+benchmark one on photographic (\textit{real}) images and one on hand-drawn
+(\textit{sketch}) images  and apply four attribution methods: \textbf{Grad-CAM},
 \textbf{Grad-CAM++}, \textbf{Integrated Gradients}, and \textbf{LIME}.
 Each method is evaluated along four quantitative axes:
 \emph{stability} (SSIM under input perturbation),
@@ -100,12 +100,12 @@ often taken for granted.  This project investigates a central question:
 
 \begin{quote}
 \emph{When a neural network is trained on one visual style, do its explanations
-remain consistent, faithful, and stable --- even on images it has never seen
+remain consistent, faithful, and stable even on images it has never seen
 before?}
 \end{quote}
 
 A critical challenge in deploying deep learning models is \textbf{domain shift}
---- the performance degradation that occurs when a model trained on one data
+ the performance degradation that occurs when a model trained on one data
 distribution is applied to a different but related distribution.  Domain shift
 is pervasive in real-world applications: a medical imaging model trained on data
 from one hospital may fail when applied to images from another; an autonomous
@@ -153,7 +153,7 @@ multiple XAI techniques, we can systematically study:
     \item \textbf{Comparative analysis:} Quantitative comparison of Grad-CAM,
           Grad-CAM++, Integrated Gradients, and LIME across two visual domains,
           revealing trade-offs between explanation granularity, stability, and
-          faithfulness --- and demonstrating that explanation reliability is
+          faithfulness  and demonstrating that explanation reliability is
           \emph{not} guaranteed even when classification accuracy remains high.
     \item \textbf{Evidence for the shape bias hypothesis:} Our results provide
           direct evidence that sketch-trained models learn more transferable,
@@ -245,17 +245,17 @@ Other                  &  8 & light\_bulb, telephone, trumpet, toaster \\
 The data preparation pipeline (\texttt{prepare\_data.py}) performs:
 
 \begin{enumerate}[leftmargin=*]
-    \item \textbf{Stratified splitting} --- Each class maintains its proportion
+    \item \textbf{Stratified splitting} Each class maintains its proportion
           across train/val/test splits (80\%/10\%/10\%) using
           \texttt{sklearn.model\_selection.train\_test\_split} with
           \texttt{stratify=labels} and a fixed seed (\texttt{random\_state=42}).
-    \item \textbf{Cross-domain oversampling balance} --- Since the two domains
-          have different per-class counts, the training sets are balanced:
+    \item \textbf{Cross-domain oversampling balance} Since the two domains
+          have different per-class counts, all the sets are balanced:
           for each class, $\text{target\_count} = \max(\text{real\_count},
           \text{sketch\_count})$.  The smaller domain is oversampled by
-          randomly duplicating entries.  Validation and test splits are
-          \emph{never} modified.
-    \item \textbf{Inverse-frequency class weights} --- Weights for the loss
+          randomly duplicating entries with augmentations.  
+         
+    \item \textbf{Inverse-frequency class weights}  Weights for the loss
           function:
           \begin{equation}
               w_c = \frac{N_{\text{total}}}{C \times N_c}
@@ -275,15 +275,14 @@ The data preparation pipeline (\texttt{prepare\_data.py}) performs:
 \textbf{Domain} & \textbf{Train} & \textbf{Val} & \textbf{Test} \\
 \midrule
 Real   & 29{,}501 & 3{,}515 & 3{,}515 \\
-Sketch & 29{,}501 & 2{,}724 & 2{,}724 \\
+Sketch & 29{,}501 & 3{,}515 & 3{,}515 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Key design decisions:
 \begin{itemize}[leftmargin=*]
-    \item Validation and test sets are held out \emph{before} balancing to
-          prevent data leakage.
+    
     \item Labels are assigned by sorted class name, making the mapping
           deterministic.
     \item Training augmentations (random crop, flip, colour jitter) ensure
@@ -335,7 +334,7 @@ target dataset is substantially different from ImageNet.
 Even after unfreezing, the pretrained backbone and the new head should not be
 updated at the same rate.  The backbone already contains useful features learned
 from 1.2 million ImageNet images; aggressive updates would cause
-\textbf{catastrophic forgetting} --- the phenomenon where a neural network
+\textbf{catastrophic forgetting} the phenomenon where a neural network
 forgets previously learned knowledge when trained on new data.
 
 We apply a 10$\times$ lower learning rate to the backbone:
@@ -412,7 +411,7 @@ samples and their labels:
 \end{equation}
 
 The Beta(0.2, 0.2) distribution is U-shaped, meaning $\lambda$ tends to be
-close to 0 or 1 --- so most mixed images look mostly like one of the two
+close to 0 or 1 so most mixed images look mostly like one of the two
 originals, with a subtle blend of the other.  Mixup serves several purposes:
 \begin{itemize}[leftmargin=*]
     \item \textbf{Regularisation:} It prevents the model from memorising
@@ -426,7 +425,7 @@ originals, with a subtle blend of the other.  Mixup serves several purposes:
 \end{itemize}
 
 Note that mixup causes training accuracy to appear lower than validation
-accuracy --- this is expected, since the model is trained on blended images but
+accuracy this is expected, since the model is trained on blended images but
 evaluated on clean ones.
 
 \subsubsection{Loss Function: Weighted Cross-Entropy with Label Smoothing}
@@ -469,7 +468,7 @@ y_{\text{smooth}}(k) =
 \end{equation}
 
 where $C = 81$ is the number of classes.  This prevents the model from becoming
-\emph{overconfident} --- instead of driving logits to extreme values (which can
+\emph{overconfident} instead of driving logits to extreme values (which can
 cause gradient saturation and poor calibration), it encourages the model to
 maintain a small amount of uncertainty.  Label smoothing acts as a regulariser
 and typically improves generalisation performance, especially under domain shift.
@@ -545,7 +544,7 @@ convergence reaching a peak validation F1 (macro) of \textbf{0.9451} at epoch
     xlabel={Epoch}, ylabel={Loss},
     grid=both, grid style={gray!20},
     legend pos=north east,
-    title={Real Model --- Training \& Validation Loss},
+    title={Real Model Training \& Validation Loss},
 ]
 \addplot[blue, thick, mark=o, mark size=1.5pt] coordinates {
     (1,3.2000) (2,1.7589) (3,1.5178) (4,1.4694) (5,1.4223)
@@ -568,7 +567,7 @@ convergence reaching a peak validation F1 (macro) of \textbf{0.9451} at epoch
 \caption{Training and validation loss curves for the real-domain model.  The
 validation loss plateaus around epoch 11 ($\sim$1.047), triggering early
 stopping at epoch 21.  Note that training loss is higher than validation loss
---- this is expected with mixup augmentation.}
+ this is expected with mixup augmentation.}
 \label{fig:real_loss}
 \end{figure}
 
@@ -580,7 +579,7 @@ stopping at epoch 21.  Note that training loss is higher than validation loss
     xlabel={Epoch}, ylabel={Accuracy (\%)},
     grid=both, grid style={gray!20},
     legend pos=south east,
-    title={Real Model --- Training \& Validation Accuracy},
+    title={Real Model Training \& Validation Accuracy},
     ymin=45, ymax=100,
 ]
 \addplot[blue, thick, mark=o, mark size=1.5pt] coordinates {
@@ -614,7 +613,7 @@ accuracy stabilises around 94.5\% from epoch 5 onward.}
     xlabel={Epoch}, ylabel={F1 Score},
     grid=both, grid style={gray!20},
     legend pos=south east,
-    title={Real Model --- Validation F1 Scores},
+    title={Real Model  Validation F1 Scores},
     ymin=0.85, ymax=0.96,
 ]
 \addplot[blue, thick, mark=o, mark size=1.5pt] coordinates {
@@ -653,7 +652,7 @@ F1 (macro) of \textbf{0.8336} at epoch 13.
     xlabel={Epoch}, ylabel={Loss},
     grid=both, grid style={gray!20},
     legend pos=north east,
-    title={Sketch Model --- Training \& Validation Loss},
+    title={Sketch Model Training \& Validation Loss},
 ]
 \addplot[blue, thick, mark=o, mark size=1.5pt] coordinates {
     (1,3.7655) (2,2.3588) (3,2.0445) (4,1.8708) (5,1.7336)
@@ -685,7 +684,7 @@ the greater challenge of learning from abstract sketches.}
     xlabel={Epoch}, ylabel={Accuracy (\%)},
     grid=both, grid style={gray!20},
     legend pos=south east,
-    title={Sketch Model --- Training \& Validation Accuracy},
+    title={Sketch Model  Training \& Validation Accuracy},
     ymin=25, ymax=90,
 ]
 \addplot[blue, thick, mark=o, mark size=1.5pt] coordinates {
@@ -717,7 +716,7 @@ Validation accuracy plateaus around 82--83\%.}
     xlabel={Epoch}, ylabel={F1 Score},
     grid=both, grid style={gray!20},
     legend pos=south east,
-    title={Sketch Model --- Validation F1 Scores},
+    title={Sketch Model Validation F1 Scores},
     ymin=0.55, ymax=0.86,
 ]
 \addplot[blue, thick, mark=o, mark size=1.5pt] coordinates {
@@ -750,7 +749,7 @@ Validation accuracy plateaus around 82--83\%.}
     xlabel={Epoch}, ylabel={Score},
     grid=both, grid style={gray!20},
     legend pos=south east,
-    title={Real Model --- Validation Precision \& Recall},
+    title={Real Model Validation Precision \& Recall},
     ymin=0.85, ymax=0.96,
 ]
 \addplot[teal, thick, mark=o, mark size=1.5pt] coordinates {
@@ -783,7 +782,7 @@ Validation accuracy plateaus around 82--83\%.}
     xlabel={Epoch}, ylabel={Score},
     grid=both, grid style={gray!20},
     legend pos=south east,
-    title={Sketch Model --- Validation Precision \& Recall},
+    title={Sketch Model Validation Precision \& Recall},
     ymin=0.55, ymax=0.86,
 ]
 \addplot[teal, thick, mark=o, mark size=1.5pt] coordinates {
@@ -1049,7 +1048,7 @@ The bottom performers reveal that sketch classification is hardest for
 whose sketches look similar, and \emph{simple geometric shapes} (triangle at
 60.00\%, circle at 65.00\%) that lack distinguishing internal detail.
 Interestingly, \emph{firetruck} drops from 100\% in the real model to 57.58\%
-in the sketch model --- likely because sketches of firetrucks lack the
+in the sketch model likely because sketches of firetrucks lack the
 distinctive red colour and detailed ladder/hose features that make them easy
 to identify in photographs.
 
@@ -1059,7 +1058,7 @@ to identify in photographs.
 \label{sec:xai_methods}
 
 Deep neural networks achieve impressive accuracy, but they function as
-``black boxes'' --- they do not explain \emph{why} they make a particular
+``black boxes'' they do not explain \emph{why} they make a particular
 prediction.  \textbf{Attribution methods} (also called \emph{saliency methods})
 address this by assigning an importance score to every spatial location in the
 input image.  The result is a \textbf{heatmap} that highlights the pixels or
@@ -1079,7 +1078,7 @@ interpreting the results that follow.
 
 \textbf{Gradient-weighted Class Activation Mapping}~\cite{selvaraju2017gradcam}
 is one of the most widely used XAI methods in computer vision.  It works by
-looking at the \emph{last convolutional layer} of the network --- the layer
+looking at the \emph{last convolutional layer} of the network the layer
 that still retains spatial information (i.e., it knows \emph{where} things are
 in the image) while also encoding high-level semantic concepts (i.e., it knows
 \emph{what} things look like).
@@ -1089,11 +1088,11 @@ in the image) while also encoding high-level semantic concepts (i.e., it knows
 A convolutional neural network (CNN) like ResNet-152 processes an image through
 a series of layers that progressively extract more abstract features:
 \begin{itemize}[leftmargin=*]
-    \item \textbf{Early layers} (conv1, layer1) detect simple patterns ---
+    \item \textbf{Early layers} (conv1, layer1) detect simple patterns 
           edges, corners, colour gradients.
     \item \textbf{Middle layers} (layer2, layer3) combine these into textures,
           parts, and object fragments.
-    \item \textbf{Late layers} (layer4) detect high-level concepts --- ``this
+    \item \textbf{Late layers} (layer4) detect high-level concepts ``this
           region contains a wheel'', ``this region has a face''.
 \end{itemize}
 
@@ -1171,7 +1170,7 @@ learned and \emph{where} in the image each concept appears.
     \item \textbf{Single-instance bias:} When multiple objects of the same
           class appear, Grad-CAM tends to highlight only the most prominent
           one.
-    \item \textbf{No formal guarantees:} The method is a heuristic --- there
+    \item \textbf{No formal guarantees:} The method is a heuristic there
           is no mathematical proof that the highlighted region is truly
           ``the reason'' for the prediction.
 \end{itemize}
@@ -1208,7 +1207,7 @@ this channel help predict dog?''  Grad-CAM++ asks a more refined question:
 positive evidence for dog?''
 
 By considering second-order derivatives ($\partial^2 y^c / \partial A_k^2$),
-the method captures \emph{curvature} information --- not just whether the
+the method captures \emph{curvature} information not just whether the
 gradient is positive, but how quickly it is changing.  The third-order term
 provides additional correction for numerical stability.
 
@@ -1217,14 +1216,14 @@ across the entire object:
 \begin{itemize}[leftmargin=*]
     \item Grad-CAM on a dog might highlight only the face.
     \item Grad-CAM++ on the same dog will highlight the face, body, legs, and
-          tail --- capturing the \emph{full extent} of the object.
+          tail capturing the \emph{full extent} of the object.
 \end{itemize}
 
 \subsubsection{Strengths and Limitations}
 
 \textbf{Strengths:}
 \begin{itemize}[leftmargin=*]
-    \item Better \emph{full object coverage} --- the heatmap covers more of the
+    \item Better \emph{full object coverage} the heatmap covers more of the
           relevant region, not just the single most discriminative part.
     \item More numerically stable weights due to the higher-order formulation.
     \item Better multi-instance localisation when several objects of the same
@@ -1283,7 +1282,7 @@ should obey:
           \sum_i \text{IG}_i(x) = F(x) - F(x')
           \end{equation}
           This means attributions are \emph{additive} and
-          \emph{budget-balanced} --- no importance is lost or fabricated.
+          \emph{budget-balanced} no importance is lost or fabricated.
 \end{itemize}
 
 \subsubsection{Step-by-Step Computation}
@@ -1331,7 +1330,7 @@ should obey:
 Consider a pixel that is vital for recognising a tiger's stripe.  At the
 baseline (black image), this pixel contributes nothing.  As we fade the image
 in, there is a critical moment when this pixel ``activates'' the stripe
-detector in the network --- the gradient spikes at that moment.  By integrating
+detector in the network the gradient spikes at that moment.  By integrating
 over the entire path, IG captures this spike even if the gradient is zero at
 the endpoints.  Simple gradient methods would miss it entirely.
 
@@ -1339,12 +1338,12 @@ the endpoints.  Simple gradient methods would miss it entirely.
 
 \textbf{Strengths:}
 \begin{itemize}[leftmargin=*]
-    \item \textbf{Pixel-level resolution} ($224 \times 224$) --- reveals fine
+    \item \textbf{Pixel-level resolution} ($224 \times 224$) reveals fine
           details like individual stripes, edges, or small distinguishing
           features.
-    \item \textbf{Mathematically principled} --- the axioms guarantee
+    \item \textbf{Mathematically principled} the axioms guarantee
           completeness and sensitivity.
-    \item \textbf{Architecture-agnostic} --- works for any differentiable
+    \item \textbf{Architecture-agnostic} works for any differentiable
           model (CNNs, transformers, etc.).
 \end{itemize}
 
@@ -1387,7 +1386,7 @@ this process by:
 \begin{enumerate}[leftmargin=*]
     \item \textbf{Segment the image into superpixels:}  Using the quickshift
           segmentation algorithm, the image is divided into $\sim$150
-          superpixels --- contiguous regions of visually similar pixels.  Each
+          superpixels contiguous regions of visually similar pixels.  Each
           superpixel might correspond to a patch of sky, a section of a
           wheel, or part of a face.
 
@@ -1412,7 +1411,7 @@ this process by:
           learned coefficients $w_j$ become the importance scores.
 
     \item \textbf{Interpret the coefficients:}  A positive $w_j$ means that
-          superpixel $j$ \emph{supports} the predicted class --- hiding it
+          superpixel $j$ \emph{supports} the predicted class hiding it
           would reduce the model's confidence.  A negative $w_j$ means the
           superpixel actually \emph{hurts} the prediction.  We keep only the
           positive contributions and normalise to $[0, 1]$.
@@ -1498,7 +1497,7 @@ reasoning from multiple perspectives.
 \label{sec:eval_axes}
 
 Generating a heatmap is only the first step.  A heatmap that looks pretty but
-does not faithfully represent the model's reasoning is worse than useless ---
+does not faithfully represent the model's reasoning is worse than useless 
 it is \emph{misleading}.  We therefore evaluate each method along four
 independent quantitative axes.
 
@@ -1529,12 +1528,12 @@ model's prediction.
 
 \textbf{Deletion protocol:} Progressively remove the most ``important'' pixels
 (10\%, 20\%, \ldots, 90\%) and record how the model's confidence drops.  A
-faithful explanation should cause a rapid confidence drop --- measured as the
+faithful explanation should cause a rapid confidence drop measured as the
 \textbf{deletion AUC} (higher = more faithful).
 
 \textbf{Insertion protocol:} Start from a blank image and progressively reveal
 the most ``important'' pixels.  A faithful explanation should cause confidence
-to rise quickly --- measured as the \textbf{insertion AUC} (higher = more
+to rise quickly measured as the \textbf{insertion AUC} (higher = more
 faithful).
 
 \subsubsection{Axis 3: Cross-Domain Consistency}
@@ -1599,7 +1598,7 @@ overlay.
 \end{subfigure}
 \caption{\textbf{All four methods on a real tiger} (real model).
 Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the
-tiger's head and body --- they correctly identify \emph{where} the tiger is but
+tiger's head and body they correctly identify \emph{where} the tiger is but
 with coarse spatial resolution.  Integrated Gradients provides pixel-level
 detail, highlighting specific stripe patterns and fur texture.  LIME
 identifies superpixel regions covering the body and background boundary.  All four
@@ -1633,7 +1632,7 @@ methods agree on the general region of interest, indicating good explanations.}
 \end{subfigure}
 \caption{\textbf{All four methods on a sketch lighthouse} (sketch model).
 On sketches, Grad-CAM focuses on the tower silhouette rather than
-texture details --- consistent with the sketch model learning structural
+texture details consistent with the sketch model learning structural
 features.  Integrated Gradients traces specific line strokes of the drawing.
 LIME highlights the superpixel regions covering the tower and light structure.}
 \label{fig:attr_lighthouse_sketch}
@@ -1643,24 +1642,24 @@ LIME highlights the superpixel regions covering the tower and light structure.}
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/ladder_0558.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/ladder_0560.png}
     \caption{Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam_pp/real/ladder_0558.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam_pp/real/ladder_0560.png}
     \caption{Grad-CAM++}
 \end{subfigure}
 
 \vspace{0.3cm}
 
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/ladder_0558.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/ladder_0560.png}
     \caption{Integrated Gradients}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/ladder_0558.png}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/ladder_0560.png}
     \caption{LIME}
 \end{subfigure}
 \caption{\textbf{All four methods on a real ladder} (real model).
@@ -1669,7 +1668,7 @@ is focusing on the correct features.  Grad-CAM highlights the central
 rung and rail region.  Grad-CAM++ provides broader coverage of the
 A-frame structure.  Integrated Gradients picks up fine edge details along individual rungs.
 LIME identifies the ladder outline as the key superpixel region.  These are
-examples of \emph{high-quality explanations} --- all methods agree and focus
+examples of \emph{high-quality explanations} all methods agree and focus
 on semantically meaningful features.}
 \label{fig:attr_ladder_real}
 \end{figure}
@@ -1699,7 +1698,7 @@ on semantically meaningful features.}
     \caption{LIME}
 \end{subfigure}
 \caption{\textbf{All four methods on a real tiger} (real model, 98.36\% accuracy).
-Grad-CAM and Grad-CAM++ focus on the face and striped body --- the model
+Grad-CAM and Grad-CAM++ focus on the face and striped body the model
 correctly uses the distinctive stripe pattern and facial features.  Integrated
 Gradients reveals that individual stripes and the eye region are the most
 important pixels.  This confirms the real model leverages \emph{texture
@@ -1786,7 +1785,7 @@ An important question is whether the real model and sketch model focus on the
 \end{subfigure}
 \caption{\textbf{Cross-domain comparison: Grad-CAM on a sketch bicycle.}
 The sketch model (right) produces a more focused, confident heatmap centred on
-the bicycle's structural features --- wheels, frame, handlebars.  The real
+the bicycle's structural features wheels, frame, handlebars.  The real
 model (left) produces a more diffuse, uncertain heatmap, reflecting its
 difficulty in recognising the object without texture cues.}
 \label{fig:attr_cross_bicycle}
@@ -1797,24 +1796,24 @@ difficulty in recognising the object without texture cues.}
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/sketch/banana_0094.png}
-    \caption{Real model --- Grad-CAM}
+    \caption{Real model Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/banana_0094.png}
-    \caption{Sketch model --- Grad-CAM}
+    \caption{Sketch model Grad-CAM}
 \end{subfigure}
 
 \vspace{0.3cm}
 
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/sketch/banana_0094.png}
-    \caption{Real model --- Integrated Gradients}
+    \caption{Real model Integrated Gradients}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/banana_0094.png}
-    \caption{Sketch model --- Integrated Gradients}
+    \caption{Sketch model Integrated Gradients}
 \end{subfigure}
 \caption{\textbf{Sketch banana: real model vs.\ sketch model.}
 The sketch model produces sharper, more confident attributions because it was
@@ -1860,12 +1859,12 @@ high precision.}
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/lion_0658.png}
-    \caption{Grad-CAM --- Real lion}
+    \caption{Grad-CAM Real lion}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/lion_0658.png}
-    \caption{Integrated Gradients --- Real lion}
+    \caption{Integrated Gradients Real lion}
 \end{subfigure}
 \caption{\textbf{Attribution comparison for a real lion} (real model,
 98.08\% accuracy).  Grad-CAM highlights the face and mane region as a broad
@@ -1900,7 +1899,7 @@ attending to the correct semantically meaningful features.}
     \caption{Sketch model --- LIME}
 \end{subfigure}
 \caption{\textbf{Sketch tiger: real model vs.\ sketch model.}
-The real model struggles with the sketch --- its heatmap is diffuse and may
+The real model struggles with the sketch its heatmap is diffuse and may
 focus on background regions, indicating poor explanation quality under domain
 shift.  The sketch model produces more targeted attributions on the tiger's
 body and stripes.  This illustrates how domain shift degrades not just
@@ -2384,7 +2383,7 @@ higher than the real model's (0.842), consistent with the shape bias hypothesis.
     \item \textbf{Integrated Gradients shows the largest model gap:} The
           sketch model (0.895) is substantially more consistent than the real
           model (0.842).  This indicates the sketch model's pixel-level
-          attributions are more domain-invariant --- it attends to the same
+          attributions are more domain-invariant it attends to the same
           structural features (edges, contours) in both real and sketch images.
     \item \textbf{LIME} achieves moderate consistency ($\approx 0.87$--$0.88$),
           limited by its stochastic superpixel segmentation.
@@ -2608,13 +2607,13 @@ them, directly explaining the asymmetric transfer and explanation degradation.
 Based on our analysis, we recommend:
 
 \begin{itemize}[leftmargin=*]
-    \item \textbf{For quick, reliable explanations:} Use Grad-CAM++ --- it
+    \item \textbf{For quick, reliable explanations:} Use Grad-CAM++ it
           offers the best stability while providing class-discriminative
           spatial highlighting.
     \item \textbf{For detailed pixel-level analysis:} Use Integrated Gradients
-          --- despite lower stability, its axiomatic guarantees make it
+           despite lower stability, its axiomatic guarantees make it
           suitable for rigorous analysis.
-    \item \textbf{For model-agnostic explanations:} Use LIME --- when the
+    \item \textbf{For model-agnostic explanations:} Use LIME  when the
           model architecture is unknown, LIME is the only option, though
           users should be aware of its stochastic nature.
     \item \textbf{For cross-domain studies:} Consider training on sketches or
@@ -2677,7 +2676,7 @@ Our key findings are:
 
     \item \textbf{Domain shift degrades explanations:}  Not only does
           classification accuracy drop under domain shift, but the quality of
-          XAI explanations also deteriorates --- attributions become diffuse,
+          XAI explanations also deteriorates attributions become diffuse,
           unfocused, and less semantically meaningful.
 
     \item \textbf{CAM-based methods are most stable and consistent:}
@@ -2698,7 +2697,7 @@ Our key findings are:
 
     \item \textbf{Domain-invariant representations explain transfer:}
           The sketch model's feature space intermixes real and sketch images
-          (visible in t-SNE/UMAP), while the real model separates them ---
+          (visible in t-SNE/UMAP), while the real model separates them 
           directly explaining the asymmetric transfer performance.
 
     \item \textbf{XAI evaluation must be multi-axis:}  No single method

@@ -7,3 +7,5 @@ logs/
 output/
 *.err
 *.out
+correct_output_IG/
+fix_ig.py

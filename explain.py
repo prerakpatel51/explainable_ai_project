@@ -262,38 +262,95 @@ def grad_cam_pp(model, input_tensor, target_class, device):
 # XAI Method 3: Integrated Gradients
 # ---------------------------------------------------------------------------
 
+def _ig_predictions_and_gradients(model, scaled_inputs_np, target_label_index, device):
+    """Compute gradients in raw pixel space for a batch of interpolated images.
+
+    Based on https://github.com/ankurtaly/Integrated-Gradients.
+    Takes raw pixel numpy arrays [0,1], normalizes for the model, and returns
+    gradients w.r.t. raw pixel input via chain rule.
+    """
+    mean = torch.tensor(IMAGENET_MEAN, device=device).view(1, 3, 1, 1)
+    std = torch.tensor(IMAGENET_STD, device=device).view(1, 3, 1, 1)
+
+    batch = torch.tensor(
+        np.array(scaled_inputs_np), dtype=torch.float32, device=device
+    ).permute(0, 3, 1, 2)  # [N,3,224,224]
+    batch.requires_grad_(True)
+
+    normalized = (batch - mean) / std
+    output = model(normalized)
+    target_score = output[:, target_label_index].sum()
+    target_score.backward()
+
+    gradients = batch.grad.detach().permute(0, 2, 3, 1).cpu().numpy()  # [N,224,224,3]
+    return gradients
+
+
+def _linear_transform(attributions, clip_above_percentile=99.9,
+                      clip_below_percentile=70.0, low=0.2):
+    """Percentile-based linear transform from ankurtaly/Integrated-Gradients."""
+    flat = np.sort(attributions.flatten())
+    idx_above = max(0, min(int(len(flat) * (1.0 - clip_above_percentile / 100.0)), len(flat) - 1))
+    idx_below = max(0, min(int(len(flat) * (1.0 - clip_below_percentile / 100.0)), len(flat) - 1))
+    m = flat[idx_above]
+    e = flat[idx_below]
+    if m == e:
+        return np.zeros_like(attributions)
+    transformed = (1 - low) * (np.abs(attributions) - e) / (m - e) + low
+    transformed *= np.sign(attributions)
+    transformed *= (transformed >= low).astype(float)
+    return np.clip(transformed, 0.0, 1.0)
+
+
 def integrated_gradients(model, input_tensor, target_class, device,
-                         ig_steps=50, batch_size=32):
-    """Compute Integrated Gradients attribution map for a single input."""
-    # Baseline: zero tensor (ImageNet-mean in normalized space)
-    baseline = torch.zeros_like(input_tensor)
-    diff = input_tensor - baseline
+                         ig_steps=300, batch_size=25):
+    """Compute Integrated Gradients attribution map.
 
-    # Create interpolated inputs
-    alphas = torch.linspace(0, 1, ig_steps + 1, device=device)
+    Faithful reimplementation from https://github.com/ankurtaly/Integrated-Gradients:
+    - Works in raw pixel space [0,1], not normalized space
+    - Zero baseline (black image)
+    - Trapezoidal rule: (grads[:-1] + grads[1:]) / 2.0
+    - Positive polarity, percentile-based linear transform, Gaussian smoothing
+    """
+    # Convert normalized input back to raw pixel space [0,1]
+    mean = torch.tensor(IMAGENET_MEAN).view(3, 1, 1)
+    std = torch.tensor(IMAGENET_STD).view(3, 1, 1)
+    raw = (input_tensor.squeeze(0).cpu() * std + mean).clamp(0, 1)
+    inp_np = raw.permute(1, 2, 0).numpy()  # [224,224,3]
+
+    baseline = np.zeros_like(inp_np)
+
+    # Generate interpolated inputs
+    scaled_inputs = [
+        baseline + (float(i) / ig_steps) * (inp_np - baseline)
+        for i in range(0, ig_steps + 1)
+    ]
+
+    # Compute gradients in batches
     all_grads = []
+    for start in range(0, len(scaled_inputs), batch_size):
+        batch = scaled_inputs[start:start + batch_size]
+        grads = _ig_predictions_and_gradients(model, batch, target_class, device)
+        all_grads.append(grads)
 
-    # Process in batches
-    for start in range(0, len(alphas), batch_size):
-        end = min(start + batch_size, len(alphas))
-        batch_alphas = alphas[start:end].view(-1, 1, 1, 1)
-        interpolated = baseline + batch_alphas * diff  # (batch, 3, 224, 224)
-        interpolated.requires_grad_(True)
+    grads = np.concatenate(all_grads, axis=0)  # [steps+1, 224, 224, 3]
 
-        output = model(interpolated)
-        scores = output[:, target_class].sum()
-        scores.backward()
-        all_grads.append(interpolated.grad.detach())
+    # Trapezoidal rule
+    grads = (grads[:-1] + grads[1:]) / 2.0
+    avg_grads = np.average(grads, axis=0)  # [224, 224, 3]
 
-    # Average gradients (trapezoidal rule: endpoints weighted by 0.5)
-    grads = torch.cat(all_grads, dim=0)  # (ig_steps+1, 3, 224, 224)
-    avg_grads = (grads[:-1] + grads[1:]).sum(dim=0) / (2 * ig_steps)  # (3, 224, 224)
+    # Final attribution
+    attributions = (inp_np - baseline) * avg_grads  # [224, 224, 3]
 
-    # Attribution = avg_grads * (input - baseline), keep only positive contributions
-    attribution = (avg_grads * diff.squeeze(0))          # (3, 224, 224), signed
-    attribution = attribution.clamp(min=0).sum(dim=0)    # (224, 224)
-    attribution = attribution.cpu().numpy()
-    return normalize_heatmap(attribution)
+    # Positive polarity -> grayscale (mean across channels)
+    attr = np.clip(attributions, 0, np.max(attributions))
+    grayscale = np.average(attr, axis=2)  # [224, 224]
+
+    # Percentile-based linear transform + Gaussian smoothing
+    grayscale = _linear_transform(grayscale)
+    grayscale = ndimage.gaussian_filter(grayscale, sigma=1.0)
+
+    return grayscale
 
 
 # ---------------------------------------------------------------------------
