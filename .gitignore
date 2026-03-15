@@ -9,3 +9,5 @@ output/
 *.out
 correct_output_IG/
 fix_ig.py
+create_ppt.py
+/home1/ppatel2025/xai_project_2/docs/XAI_Presentation.pptx
