@@ -7,10 +7,10 @@ The central question this project answers:
 > *When a neural network is trained on one visual style, do its explanations remain consistent, faithful, and stable — even on images it has never seen before?*
 
 <p align="center">
-  <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM on sketch ladder"/>
-  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME on sketch ladder"/>
+  <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM on real ladder"/>
+  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME on real ladder"/>
 </p>
-<p align="center"><em>Grad-CAM (left) and LIME (right) attribution maps on a sketch ladder — highlighting where the model looks to make its prediction.</em></p>
+<p align="center"><em>Grad-CAM (left) and LIME (right) attribution maps on a real ladder — highlighting where the model looks to make its prediction.</em></p>
 
 ---
 
@@ -421,9 +421,9 @@ After layer4, the spatial information is collapsed by global average pooling int
 
 <p align="center">
   <img src="docs/images/attribution_maps/gradcam_real_tiger.png" width="45%" alt="Grad-CAM on real tiger"/>
-  <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM on sketch ladder"/>
+  <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM on real ladder"/>
 </p>
-<p align="center"><em>Grad-CAM on a real tiger (left) and a sketch ladder (right). The broad heatmap correctly covers the tiger's head/body and the ladder's A-frame structure, but fine details are lost at 7×7 resolution.</em></p>
+<p align="center"><em>Grad-CAM on a real tiger (left) and a real ladder (right). The broad heatmap correctly covers the tiger's head/body and the ladder's A-frame structure, but fine details are lost at 7×7 resolution.</em></p>
 
 > **How to read these images:** Each attribution map shows three panels — **Original** (the input photo), **Heatmap** (the AI's attention map, where red = high importance, blue = low importance), and **Overlay** (the heatmap placed on top of the original so you can see exactly which parts the AI cared about). In the tiger example, notice how the red region sits right on the tiger's face and body — that's the AI saying "I see stripes and a feline shape here, so I predict tiger." The blue background means "this part didn't help me decide." For the ladder, the heatmap covers the rungs and rails — the distinctive structural features.
 
@@ -452,7 +452,7 @@ Grad-CAM asks: "On average across all positions, does this channel help predict 
 
 <p align="center">
   <img src="docs/images/attribution_maps/gradcampp_real_tiger.png" width="45%" alt="Grad-CAM++ on real tiger"/>
-  <img src="docs/images/attribution_maps/gradcampp_real_ladder.png" width="45%" alt="Grad-CAM++ on sketch ladder"/>
+  <img src="docs/images/attribution_maps/gradcampp_real_ladder.png" width="45%" alt="Grad-CAM++ on real ladder"/>
 </p>
 <p align="center"><em>Grad-CAM++ on the same tiger (left) and ladder (right). Note the broader, more complete coverage — Grad-CAM++ highlights the full tiger body and the entire ladder structure compared to Grad-CAM's tighter focus.</em></p>
 
@@ -507,7 +507,7 @@ Consider a pixel vital for recognizing a tiger's stripe. At the baseline (black)
 
 <p align="center">
   <img src="docs/images/attribution_maps/ig_real_tiger.png" width="45%" alt="Integrated Gradients on real tiger"/>
-  <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="Integrated Gradients on sketch ladder"/>
+  <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="Integrated Gradients on real ladder"/>
 </p>
 <p align="center"><em>Integrated Gradients on the same tiger (left) and ladder (right). Pixel-level detail picks up individual stripes/fur texture on the tiger and individual rung edges on the ladder, but the output is sparser and noisier than CAM methods.</em></p>
 
@@ -553,7 +553,7 @@ LIME doesn't need access to weights, gradients, or architecture — just the abi
 
 <p align="center">
   <img src="docs/images/attribution_maps/lime_real_tiger.png" width="45%" alt="LIME on real tiger"/>
-  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME on sketch ladder"/>
+  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME on real ladder"/>
 </p>
 <p align="center"><em>LIME on the same tiger (left) and ladder (right). Superpixel regions are coloured by importance — the tiger's body and the ladder's structure are clearly identified as the most important regions (warm colours).</em></p>
 
@@ -576,8 +576,8 @@ LIME doesn't need access to weights, gradients, or architecture — just the abi
   <img src="docs/images/attribution_maps/gradcampp_real_ladder.png" width="45%" alt="Grad-CAM++ ladder"/>
 </p>
 <p align="center">
-  <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="IG ladder"/>
-  <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME ladder"/>
+  <img src="docs/images/attribution_maps/ig_sketch_ladder.png" width="45%" alt="IG ladder"/>
+  <img src="docs/images/attribution_maps/lime_sketch_ladder.png" width="45%" alt="LIME ladder"/>
 </p>
 <p align="center"><em>All four methods on a sketch ladder. Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). All methods agree on the key features — rungs, rails, and A-frame structure.</em></p>
 
