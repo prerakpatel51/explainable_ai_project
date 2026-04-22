@@ -40,12 +40,12 @@ pip install -r requirements.txt
 Place the DomainNet `real/` and `sketch/` folders in the project root, then run:
 
 ```bash
-python prepare_data.py
-python train.py --domain real
-python train.py --domain sketch
-python evaluate.py --checkpoint output/models/real/best_model.pt --test_domain real
-python evaluate.py --checkpoint output/models/real/best_model.pt --test_domain sketch
-python explain.py --checkpoint output/models/real/best_model.pt --domain real --output_dir output/xai/real_model
+python scripts/prepare_data.py
+python scripts/train.py --domain real
+python scripts/train.py --domain sketch
+python scripts/evaluate.py --checkpoint output/models/real/best_model.pt --test_domain real
+python scripts/evaluate.py --checkpoint output/models/real/best_model.pt --test_domain sketch
+python scripts/explain.py --checkpoint output/models/real/best_model.pt --output_dir output/xai/real_model
 ```
 
 For full end-to-end cluster runs, use `sbatch run_real.sh` or `sbatch run_sketch.sh`.
@@ -78,10 +78,10 @@ For full end-to-end cluster runs, use `sbatch run_real.sh` or `sbatch run_sketch
 - [Dataset & Classes](#dataset--classes)
 - [Project Structure](#project-structure)
 - [Pipeline at a Glance](#pipeline-at-a-glance)
-- [Step 1 — Data Preparation (`prepare_data.py`)](#step-1--data-preparation-prepare_datapy)
-- [Step 2 — Model Training (`train.py`)](#step-2--model-training-trainpy)
-- [Step 3 — Evaluation (`evaluate.py`)](#step-3--evaluation-evaluatepy)
-- [Step 4 — XAI Explainability (`explain.py`)](#step-4--xai-explainability-explainpy)
+- [Step 1 — Data Preparation (`scripts/prepare_data.py`)](#step-1--data-preparation-scriptsprepare_datapy)
+- [Step 2 — Model Training (`scripts/train.py`)](#step-2--model-training-scriptstrainpy)
+- [Step 3 — Evaluation (`scripts/evaluate.py`)](#step-3--evaluation-scriptsevaluatepy)
+- [Step 4 — XAI Explainability (`scripts/explain.py`)](#step-4--xai-explainability-scriptsexplainpy)
   - [Method 1: Grad-CAM](#method-1-grad-cam)
   - [Method 2: Grad-CAM++](#method-2-grad-cam-1)
   - [Method 3: Integrated Gradients](#method-3-integrated-gradients)
@@ -102,7 +102,7 @@ For full end-to-end cluster runs, use `sbatch run_real.sh` or `sbatch run_sketch
 - [Summary of Findings](#summary-of-findings)
 - [Future Work](#future-work)
 - [References](#references)
-- [Configuration (`config.yaml`)](#configuration-configyaml)
+- [Configuration (`configs/config.yaml`)](#configuration-configsconfigyaml)
 - [Running on SLURM (`run_real.sh` / `run_sketch.sh`)](#running-on-slurm-run_realsh--run_sketchsh)
 - [Hyperparameters](#hyperparameters)
 - [Output Structure](#output-structure)
@@ -184,14 +184,25 @@ After balancing, the final dataset splits look like this:
 ```
 xai_project_2/
 │
-├── config.yaml          # Central configuration for all scripts
-├── prepare_data.py      # Data splitting, balancing, and weight computation
-├── dataset.py           # PyTorch Dataset class + image transforms
-├── train.py             # ResNet-152 training with mixup, cosine LR, early stopping
-├── evaluate.py          # Test-set evaluation + confusion matrix + training curves
-├── explain.py           # Full XAI pipeline: 4 methods × 4 evaluation axes
+├── configs/
+│   └── config.yaml      # Central configuration
+├── scripts/
+│   ├── prepare_data.py  # CLI entry point for data splitting/balancing
+│   ├── train.py         # CLI entry point for training
+│   ├── evaluate.py      # CLI entry point for evaluation
+│   ├── explain.py       # CLI entry point for the XAI pipeline
+│   ├── create_ppt.py    # Presentation helper
+│   └── fix_ig.py        # Integrated Gradients repair script
+├── src/
+│   └── xai_project/
+│       ├── dataset.py   # Dataset class + transforms
+│       ├── prepare_data.py
+│       ├── train.py
+│       ├── evaluate.py
+│       ├── explain.py
+│       └── paths.py     # Shared repo/config path helpers
 │
-├── run_real.sh          # SLURM job: full real-domain pipeline (train→eval→explain)
+├── run_real.sh          # SLURM job: full real-domain pipeline
 ├── run_sketch.sh        # SLURM job: full sketch-domain pipeline
 ├── requirements.txt     # Python dependencies
 │
@@ -222,25 +233,25 @@ xai_project_2/
 Raw DomainNet Images
         │
         ▼
- prepare_data.py  ──►  Stratified 80/10/10 splits
+ scripts/prepare_data.py  ──►  Stratified 80/10/10 splits
                         Cross-domain oversampling balance
                         Inverse-frequency class weights
         │
         ▼
-   train.py       ──►  ResNet-152 (ImageNet pretrained)
+ scripts/train.py       ──►  ResNet-152 (ImageNet pretrained)
                         Mixup augmentation
                         Cosine LR + linear warmup
                         Weighted CrossEntropy + label smoothing
                         Early stopping on val loss
         │
         ▼
-  evaluate.py     ──►  Accuracy / F1 / Precision / Recall
+ scripts/evaluate.py    ──►  Accuracy / F1 / Precision / Recall
                         Confusion matrix
                         Training curves
                         In-domain AND cross-domain evaluation
         │
         ▼
-  explain.py      ──►  Grad-CAM  |  Grad-CAM++
+ scripts/explain.py     ──►  Grad-CAM  |  Grad-CAM++
                         Integrated Gradients  |  LIME
                         ↓
                    Stability (SSIM under perturbation)
@@ -251,7 +262,7 @@ Raw DomainNet Images
 
 ---
 
-## Step 1 Data Preparation (`prepare_data.py`)
+## Step 1 Data Preparation (`scripts/prepare_data.py`)
 
 **Goal:** Build clean, balanced, reproducible train/val/test splits from raw DomainNet folders.
 
@@ -280,7 +291,7 @@ Raw DomainNet Images
 
 ---
 
-## Step 2 Model Training (`train.py`)
+## Step 2 Model Training (`scripts/train.py`)
 
 **Goal:** Train a high-accuracy classifier on either the `real` or `sketch` domain using transfer learning from ImageNet.
 
@@ -385,7 +396,7 @@ Training was performed on an HPC cluster using SLURM:
 
 ---
 
-## Step 3 Evaluation (`evaluate.py`)
+## Step 3 Evaluation (`scripts/evaluate.py`)
 
 **Goal:** Comprehensively evaluate a trained model both in-domain and cross-domain and visualize results.
 
@@ -423,7 +434,7 @@ Cross-domain evaluation reveals how well the model generalizes to a different vi
 
 ---
 
-## Step 4  XAI Explainability (`explain.py`)
+## Step 4  XAI Explainability (`scripts/explain.py`)
 
 **Goal:** Apply four attribution methods to the trained model and measure explanation quality along four axes.
 
@@ -716,7 +727,7 @@ A heatmap might highlight the right region by coincidence. Faithfulness tests wh
 
 ### Implementation Details
 
-All XAI methods and evaluation axes are implemented in `explain.py`. Here is how each component works under the hood:
+All XAI methods and evaluation axes are implemented in `src/xai_project/explain.py`, with `scripts/explain.py` acting as the CLI entry point. Here is how each component works under the hood:
 
 #### Attribution Generation (`generate_all_attributions`)
 
@@ -1240,9 +1251,9 @@ The main lesson from this project is pretty simple: you cannot judge XAI with on
 
 ---
 
-## Configuration (`config.yaml`)
+## Configuration (`configs/config.yaml`)
 
-All scripts read defaults from `config.yaml`. Any setting can be overridden via CLI flags.
+All scripts read defaults from `configs/config.yaml`. Any setting can be overridden via CLI flags.
 
 ```yaml
 data:
@@ -1296,15 +1307,15 @@ memory:       200 GB
 
 **Submit the jobs:**
 ```bash
-sbatch run_real.sh     # Real domain pipeline
-sbatch run_sketch.sh   # Sketch domain pipeline
+sbatch run_real.sh
+sbatch run_sketch.sh
 ```
 
 **Override any setting without editing the script:**
 ```bash
-python train.py --domain sketch --epochs 50 --lr 0.0005
-python evaluate.py --checkpoint output/models/real/best_model.pt --test_domain sketch
-python explain.py --num_samples 10 --ig_steps 200 --lime_samples 5000
+python scripts/train.py --domain sketch --epochs 50 --lr 0.0005
+python scripts/evaluate.py --checkpoint output/models/real/best_model.pt --test_domain sketch
+python scripts/explain.py --num_samples 10 --ig_steps 200 --lime_samples 5000
 ```
 
 ---
@@ -1416,7 +1427,7 @@ umap-learn>=0.5     Pillow>=9.0
 
 **Data setup:** Place the DomainNet `real/` and `sketch/` folders inside the project root, then run:
 ```bash
-python prepare_data.py   # generates all splits automatically
+python scripts/prepare_data.py
 ```
 
 ---

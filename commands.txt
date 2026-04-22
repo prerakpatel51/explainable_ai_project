@@ -1,7 +1,7 @@
 # =============================================================================
 # XAI Project 2 - Commands Reference
 # =============================================================================
-# All commands use config.yaml for defaults. No extra args needed.
+# All commands use configs/config.yaml for defaults. No extra args needed.
 # Override any setting via CLI flags (e.g., --domain sketch, --epochs 50).
 # =============================================================================
 
@@ -10,7 +10,7 @@ pip install -r requirements.txt
 pip install pyyaml
 
 # ---- Step 1: Prepare data (100 balanced classes, oversampled training splits) ----
-python prepare_data.py
+python scripts/prepare_data.py
 
 # =============================================================================
 # OPTION A: Run via SLURM (recommended for full pipeline)
@@ -37,45 +37,45 @@ tail -f logs/sketch_<JOB_ID>.out
 # =============================================================================
 
 # ---- Step 2: Train real model ----
-python train.py
+python scripts/train.py
 
 # ---- Step 3: Train sketch model ----
-python train.py --domain sketch
+python scripts/train.py --domain sketch
 
 # ---- Step 4: Evaluate real model (in-domain: real->real) ----
-python evaluate.py
+python scripts/evaluate.py
 
 # ---- Step 5: Evaluate real model (cross-domain: real->sketch) ----
-python evaluate.py --test_domain sketch
+python scripts/evaluate.py --test_domain sketch
 
 # ---- Step 6: Evaluate sketch model (in-domain: sketch->sketch) ----
-python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain sketch
+python scripts/evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain sketch
 
 # ---- Step 7: Evaluate sketch model (cross-domain: sketch->real) ----
-python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain real
+python scripts/evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain real
 
 # ---- Step 8: XAI on real model (explains both real & sketch images) ----
-python explain.py
+python scripts/explain.py
 
 # ---- Step 9: XAI on sketch model (explains both real & sketch images) ----
-python explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model
+python scripts/explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model
 
 # ---- Quick XAI run (fewer samples, faster) ----
-python explain.py --num_samples 2
-python explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model --num_samples 2
+python scripts/explain.py --num_samples 2
+python scripts/explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model --num_samples 2
 
 # =============================================================================
 # Full manual pipeline (copy-paste)
 # =============================================================================
-python prepare_data.py && \
-python train.py && \
-python train.py --domain sketch && \
-python evaluate.py && \
-python evaluate.py --test_domain sketch && \
-python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain sketch && \
-python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain real && \
-python explain.py && \
-python explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model
+python scripts/prepare_data.py && \
+python scripts/train.py && \
+python scripts/train.py --domain sketch && \
+python scripts/evaluate.py && \
+python scripts/evaluate.py --test_domain sketch && \
+python scripts/evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain sketch && \
+python scripts/evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain real && \
+python scripts/explain.py && \
+python scripts/explain.py --checkpoint output/models/sketch/best_model.pt --output_dir output/xai/sketch_model
 
 # =============================================================================
 # Output Structure

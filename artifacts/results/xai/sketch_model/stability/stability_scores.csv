@@ -1,0 +1,9 @@
+method,domain,mean_ssim,std_ssim
+gradcam,real,0.9280,0.0775
+gradcam,sketch,0.9264,0.0785
+gradcam_pp,real,0.9464,0.0420
+gradcam_pp,sketch,0.9401,0.0432
+integrated_gradients,real,0.5418,0.1812
+integrated_gradients,sketch,0.4917,0.1695
+lime,real,0.4847,0.1388
+lime,sketch,0.4929,0.1433

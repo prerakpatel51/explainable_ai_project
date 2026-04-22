@@ -1,0 +1,9 @@
+method,domain,mean_auc,std_auc
+gradcam,real,0.4727,0.1756
+gradcam,sketch,0.4917,0.1700
+gradcam_pp,real,0.4531,0.1885
+gradcam_pp,sketch,0.4700,0.1873
+integrated_gradients,real,0.3209,0.2119
+integrated_gradients,sketch,0.2721,0.1924
+lime,real,0.5500,0.1581
+lime,sketch,0.5707,0.1535

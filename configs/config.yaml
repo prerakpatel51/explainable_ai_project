@@ -2,8 +2,8 @@
 # config.yaml - Central configuration for XAI Project 2
 # =============================================================================
 # All scripts read defaults from this file. CLI args override these values.
-# Usage: python train.py                      (uses all defaults from config)
-#        python train.py --domain sketch      (overrides only domain)
+# Usage: python scripts/train.py                   (uses all defaults from config)
+#        python scripts/train.py --domain sketch   (overrides only domain)
 # =============================================================================
 
 # ---- Data Settings ----

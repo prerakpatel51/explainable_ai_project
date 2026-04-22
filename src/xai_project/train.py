@@ -8,12 +8,12 @@ Features:
 - CSV logging of per-epoch metrics
 - Early stopping on validation loss
 - Resume from checkpoint
-- All defaults loaded from config.yaml
+- All defaults loaded from configs/config.yaml
 
 Usage:
-    python train.py                                    # uses all config.yaml defaults
-    python train.py --domain sketch                    # override domain only
-    python train.py --resume output/models/real/checkpoints/epoch_15.pt
+    python scripts/train.py                            # uses config defaults
+    python scripts/train.py --domain sketch            # override domain only
+    python scripts/train.py --resume output/models/real/checkpoints/epoch_15.pt
 """
 
 import argparse
@@ -31,10 +31,11 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 from torch.utils.data import DataLoader
 from torchvision import models
 
-from dataset import DomainNetDataset, get_transforms
+from xai_project.dataset import DomainNetDataset, get_transforms
+from xai_project.paths import DEFAULT_CONFIG_PATH
 
 
-def load_config(config_path="config.yaml"):
+def load_config(config_path=DEFAULT_CONFIG_PATH):
     """Load YAML config file."""
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
@@ -43,7 +44,7 @@ def load_config(config_path="config.yaml"):
 def parse_args():
     # Pre-parse to get config path first
     pre_parser = argparse.ArgumentParser(add_help=False)
-    pre_parser.add_argument("--config", type=str, default="config.yaml")
+    pre_parser.add_argument("--config", type=str, default=str(DEFAULT_CONFIG_PATH))
     pre_args, _ = pre_parser.parse_known_args()
 
     cfg = load_config(pre_args.config)
@@ -51,8 +52,8 @@ def parse_args():
     train_cfg = cfg["training"]
 
     parser = argparse.ArgumentParser(description="Train ResNet-50 on DomainNet")
-    parser.add_argument("--config", type=str, default="config.yaml",
-                        help="Path to config file (default: config.yaml)")
+    parser.add_argument("--config", type=str, default=str(DEFAULT_CONFIG_PATH),
+                        help="Path to config file (default: configs/config.yaml)")
     parser.add_argument("--domain", type=str, default=train_cfg["domain"],
                         choices=["real", "sketch"], help="Which domain to train on")
     parser.add_argument("--data_root", type=str, default=data_cfg["data_root"],

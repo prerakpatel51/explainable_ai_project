@@ -2,12 +2,12 @@
 evaluate.py - Evaluate a trained ResNet-50 on any DomainNet test set.
 
 Supports in-domain (e.g., real->real) and cross-domain (e.g., real->sketch) evaluation.
-All defaults loaded from config.yaml.
+All defaults loaded from configs/config.yaml.
 
 Usage:
-    python evaluate.py                                     # uses config.yaml defaults
-    python evaluate.py --test_domain sketch                # cross-domain eval
-    python evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain sketch
+    python scripts/evaluate.py                                     # uses config defaults
+    python scripts/evaluate.py --test_domain sketch                # cross-domain eval
+    python scripts/evaluate.py --checkpoint output/models/sketch/best_model.pt --test_domain sketch
 """
 
 import argparse
@@ -30,7 +30,8 @@ from sklearn.metrics import (
 from torch.utils.data import DataLoader
 from torchvision import models
 
-from dataset import DomainNetDataset, get_transforms
+from xai_project.dataset import DomainNetDataset, get_transforms
+from xai_project.paths import DEFAULT_CONFIG_PATH
 
 
 def plot_training_curves(training_log_csv, eval_dir, train_domain):
@@ -177,7 +178,7 @@ def plot_training_curves(training_log_csv, eval_dir, train_domain):
     print(f"  Saved: {path}")
 
 
-def load_config(config_path="config.yaml"):
+def load_config(config_path=DEFAULT_CONFIG_PATH):
     """Load YAML config file."""
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
@@ -186,7 +187,7 @@ def load_config(config_path="config.yaml"):
 def parse_args():
     # Pre-parse to get config path first
     pre_parser = argparse.ArgumentParser(add_help=False)
-    pre_parser.add_argument("--config", type=str, default="config.yaml")
+    pre_parser.add_argument("--config", type=str, default=str(DEFAULT_CONFIG_PATH))
     pre_args, _ = pre_parser.parse_known_args()
 
     cfg = load_config(pre_args.config)
@@ -194,8 +195,8 @@ def parse_args():
     eval_cfg = cfg["evaluation"]
 
     parser = argparse.ArgumentParser(description="Evaluate ResNet-50 on DomainNet")
-    parser.add_argument("--config", type=str, default="config.yaml",
-                        help="Path to config file (default: config.yaml)")
+    parser.add_argument("--config", type=str, default=str(DEFAULT_CONFIG_PATH),
+                        help="Path to config file (default: configs/config.yaml)")
     parser.add_argument("--checkpoint", type=str, default=eval_cfg["checkpoint"],
                         help="Path to model checkpoint (.pt)")
     parser.add_argument("--test_domain", type=str, default=eval_cfg["test_domain"],

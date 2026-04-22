@@ -3,10 +3,10 @@ prepare_data.py - Select classes from DomainNet, create stratified splits,
                   balance per-class training counts across domains via oversampling,
                   and compute class weights.
 
-Reads class list from config.yaml. Usage:
-    python prepare_data.py                           # uses config.yaml defaults
-    python prepare_data.py --config my_config.yaml   # custom config
-    python prepare_data.py --data_root /other/path   # override data_root
+Reads class list from configs/config.yaml. Usage:
+    python scripts/prepare_data.py                           # uses config defaults
+    python scripts/prepare_data.py --config my_config.yaml   # custom config
+    python scripts/prepare_data.py --data_root /other/path   # override data_root
 
 After creating 80/10/10 splits for each domain, the training splits are balanced:
   - For each class, target_count = max(real_train_count, sketch_train_count)
@@ -29,10 +29,12 @@ from pathlib import Path
 import yaml
 from sklearn.model_selection import train_test_split
 
+from xai_project.paths import DEFAULT_CONFIG_PATH
+
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
 
 
-def load_config(config_path="config.yaml"):
+def load_config(config_path=DEFAULT_CONFIG_PATH):
     """Load YAML config file."""
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
@@ -194,8 +196,8 @@ def save_split(split_data, filepath):
 
 def main():
     parser = argparse.ArgumentParser(description="Prepare DomainNet data splits")
-    parser.add_argument("--config", type=str, default="config.yaml",
-                        help="Path to config file (default: config.yaml)")
+    parser.add_argument("--config", type=str, default=str(DEFAULT_CONFIG_PATH),
+                        help="Path to config file (default: configs/config.yaml)")
     parser.add_argument("--data_root", type=str, default=None,
                         help="Override data_root from config")
     args = parser.parse_args()
