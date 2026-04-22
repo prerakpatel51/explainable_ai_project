@@ -104,15 +104,13 @@ remain consistent, faithful, and stable even on images it has never seen
 before?}
 \end{quote}
 
-A critical challenge in deploying deep learning models is \textbf{domain shift}
- the performance degradation that occurs when a model trained on one data
-distribution is applied to a different but related distribution.  Domain shift
-is pervasive in real-world applications: a medical imaging model trained on data
-from one hospital may fail when applied to images from another; an autonomous
-driving system trained in sunny conditions may struggle in rain or fog.
-Understanding \emph{how} a model's reasoning changes under domain shift is
-arguably even more important than measuring the accuracy drop itself, because it
-reveals whether the model has learned genuinely transferable concepts or merely
+A common problem in deploying deep learning models is \textbf{domain shift}:
+performance drops when a model trained on one data distribution is applied to a
+different but related one.  A medical imaging model trained at one hospital may
+fail on images from another; an autonomous driving system trained in sunny
+conditions may struggle in rain.  Understanding \emph{how} a model's reasoning
+changes under domain shift matters as much as measuring the accuracy drop,
+because it tells us whether the model has learned transferable concepts or just
 domain-specific shortcuts.
 
 We address this question using the \textbf{DomainNet} benchmark~\cite{domainnet},
@@ -1565,14 +1563,22 @@ groups).
 \section{XAI Results and Detailed Analysis}
 \label{sec:xai_results}
 
-\subsection{Attribution Map Visualisations}
-
 For each model, attribution maps were generated for 20 images per class per
 domain (1{,}560 images per domain, 3{,}120 total per model).  Each attribution
 is saved as a three-panel image: original $|$ heatmap (jet colourmap) $|$
-overlay.
+overlay.  This section presents qualitative visualisations followed by
+quantitative evaluation along four axes: stability, faithfulness,
+cross-domain consistency, and representation analysis.
 
-% ── Tiger comparison (Real Model, Real Domain) ─────────────────────────
+% ═══════════════════════════════════════════════════════════════════════════
+\subsection{In-Domain Attribution Maps}
+\label{sec:in_domain_attr}
+
+We first examine how the four XAI methods explain model predictions on
+\emph{in-domain} data, real images explained by the real model, and
+sketch images explained by the sketch model.
+
+% ── Tiger: all 4 methods, real model, real domain ─────────────────────────
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
@@ -1596,46 +1602,14 @@ overlay.
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/tiger_1405.png}
     \caption{LIME}
 \end{subfigure}
-\caption{\textbf{All four methods on a real tiger} (real model).
-Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the
-tiger's head and body they correctly identify \emph{where} the tiger is but
-with coarse spatial resolution.  Integrated Gradients provides pixel-level
-detail, highlighting specific stripe patterns and fur texture.  LIME
-identifies superpixel regions covering the body and background boundary.  All four
-methods agree on the general region of interest, indicating good explanations.}
-\label{fig:attr_tiger_intro}
-\end{figure}
-
-% ── Lighthouse comparison (Sketch Model, Sketch Domain) ─────────────────────
-\begin{figure}[H]
-\centering
-\begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/lighthouse_0623.png}
-    \caption{Grad-CAM}
-\end{subfigure}
-\hfill
-\begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam_pp/sketch/lighthouse_0623.png}
-    \caption{Grad-CAM++}
-\end{subfigure}
-
-\vspace{0.3cm}
-
-\begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/lighthouse_0623.png}
-    \caption{Integrated Gradients}
-\end{subfigure}
-\hfill
-\begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/sketch/lighthouse_0623.png}
-    \caption{LIME}
-\end{subfigure}
-\caption{\textbf{All four methods on a sketch lighthouse} (sketch model).
-On sketches, Grad-CAM focuses on the tower silhouette rather than
-texture details consistent with the sketch model learning structural
-features.  Integrated Gradients traces specific line strokes of the drawing.
-LIME highlights the superpixel regions covering the tower and light structure.}
-\label{fig:attr_lighthouse_sketch}
+\caption{\textbf{Real tiger, real model} (98.36\% accuracy).
+Grad-CAM and Grad-CAM++ focus on the face and striped body, and the model
+correctly uses the distinctive stripe pattern and facial features.  Integrated
+Gradients reveals that individual stripes and the eye region are the most
+important pixels.  LIME identifies superpixel regions covering the body and
+background boundary.  This confirms the real model leverages \emph{texture
+features} (stripes) which are domain-specific and may not transfer to sketches.}
+\label{fig:attr_tiger_real}
 \end{figure}
 
 % ── Ladder: all 4 methods, real model, real domain ─────────────────────────
@@ -1662,48 +1636,13 @@ LIME highlights the superpixel regions covering the tower and light structure.}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/ladder_0560.png}
     \caption{LIME}
 \end{subfigure}
-\caption{\textbf{All four methods on a real ladder} (real model).
-The ladder is a structurally distinctive class, and the explanations confirm the model
-is focusing on the correct features.  Grad-CAM highlights the central
-rung and rail region.  Grad-CAM++ provides broader coverage of the
-A-frame structure.  Integrated Gradients picks up fine edge details along individual rungs.
-LIME identifies the ladder outline as the key superpixel region.  These are
-examples of \emph{high-quality explanations} all methods agree and focus
-on semantically meaningful features.}
+\caption{\textbf{Real ladder, real model.}
+Grad-CAM highlights the central rung and rail region.  Grad-CAM++ provides
+broader coverage of the A-frame structure.  Integrated Gradients picks up fine
+edge details along individual rungs.  LIME identifies the ladder outline as
+the key superpixel region.  All methods agree on semantically meaningful
+features, an example of high-quality, consistent explanations.}
 \label{fig:attr_ladder_real}
-\end{figure}
-
-% ── Tiger: all 4 methods, real model, real domain ─────────────────────────
-\begin{figure}[H]
-\centering
-\begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/tiger_1405.png}
-    \caption{Grad-CAM}
-\end{subfigure}
-\hfill
-\begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam_pp/real/tiger_1405.png}
-    \caption{Grad-CAM++}
-\end{subfigure}
-
-\vspace{0.3cm}
-
-\begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/tiger_1405.png}
-    \caption{Integrated Gradients}
-\end{subfigure}
-\hfill
-\begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/tiger_1405.png}
-    \caption{LIME}
-\end{subfigure}
-\caption{\textbf{All four methods on a real tiger} (real model, 98.36\% accuracy).
-Grad-CAM and Grad-CAM++ focus on the face and striped body the model
-correctly uses the distinctive stripe pattern and facial features.  Integrated
-Gradients reveals that individual stripes and the eye region are the most
-important pixels.  This confirms the real model leverages \emph{texture
-features} (stripes) which are domain-specific and may not transfer to sketches.}
-\label{fig:attr_tiger_real}
 \end{figure}
 
 % ── Scissors: all 4 methods, real model ───────────────────────────────────
@@ -1730,7 +1669,7 @@ features} (stripes) which are domain-specific and may not transfer to sketches.}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/scissors_0865.png}
     \caption{LIME}
 \end{subfigure}
-\caption{\textbf{All four methods on real scissors} (real model, 98.25\% accuracy).
+\caption{\textbf{Real scissors, real model} (98.25\% accuracy).
 The scissor blades and handle junction are highlighted by all methods,
 confirming the model uses the correct structural features.}
 \label{fig:attr_scissors_real}
@@ -1760,67 +1699,61 @@ confirming the model uses the correct structural features.}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/lighthouse_0638.png}
     \caption{LIME}
 \end{subfigure}
-\caption{\textbf{All four methods on a real lighthouse} (real model, 95.83\% accuracy).
+\caption{\textbf{Real lighthouse, real model} (95.83\% accuracy).
 The tower structure and lantern room at the top are correctly identified as
 the key features.}
 \label{fig:attr_lighthouse_real}
 \end{figure}
 
-% ── Cross-domain comparison: same class, different models ─────────────────
-\subsection{Cross-Domain Attribution Comparison}
-
-An important question is whether the real model and sketch model focus on the
-\emph{same} features when looking at the same object class.
-
+% ── Lion: real model, real domain ─────────────────────────────────────────
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/sketch/bicycle_0195.png}
-    \caption{Real model on sketch bicycle}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/lion_0658.png}
+    \caption{Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/bicycle_0195.png}
-    \caption{Sketch model on sketch bicycle}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/lion_0658.png}
+    \caption{Integrated Gradients}
 \end{subfigure}
-\caption{\textbf{Cross-domain comparison: Grad-CAM on a sketch bicycle.}
-The sketch model (right) produces a more focused, confident heatmap centred on
-the bicycle's structural features wheels, frame, handlebars.  The real
-model (left) produces a more diffuse, uncertain heatmap, reflecting its
-difficulty in recognising the object without texture cues.}
-\label{fig:attr_cross_bicycle}
+\caption{\textbf{Real lion, real model} (98.08\% accuracy).
+Grad-CAM highlights the face and mane region as a broad hot zone.  Integrated
+Gradients provides finer detail, picking up specific facial features like the
+eyes, nose, and mane edges.}
+\label{fig:attr_lion}
 \end{figure}
 
-% ── Sketch domain: banana across models ────────────────────────────────────
+% ── Lighthouse: sketch model, sketch domain ─────────────────────────────
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/sketch/banana_0094.png}
-    \caption{Real model Grad-CAM}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/lighthouse_0623.png}
+    \caption{Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/banana_0094.png}
-    \caption{Sketch model Grad-CAM}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam_pp/sketch/lighthouse_0623.png}
+    \caption{Grad-CAM++}
 \end{subfigure}
 
 \vspace{0.3cm}
 
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/sketch/banana_0094.png}
-    \caption{Real model Integrated Gradients}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/lighthouse_0623.png}
+    \caption{Integrated Gradients}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/banana_0094.png}
-    \caption{Sketch model Integrated Gradients}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/sketch/lighthouse_0623.png}
+    \caption{LIME}
 \end{subfigure}
-\caption{\textbf{Sketch banana: real model vs.\ sketch model.}
-The sketch model produces sharper, more confident attributions because it was
-trained on similar line-art images.  The real model's attributions are more
-scattered, suggesting uncertainty about which features to rely on in an
-unfamiliar visual style.}
-\label{fig:attr_banana_cross}
+\caption{\textbf{Sketch lighthouse, sketch model.}
+On sketches, Grad-CAM focuses on the tower silhouette rather than texture
+details, consistent with the sketch model learning structural features.
+Integrated Gradients traces specific line strokes of the drawing.  LIME
+highlights the superpixel regions covering the tower and light structure.}
+\label{fig:attr_lighthouse_sketch}
 \end{figure}
 
 % ── Saxophone: sketch domain, all methods, sketch model ──────────────────
@@ -1847,64 +1780,287 @@ unfamiliar visual style.}
     \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/sketch/saxophone_0801.png}
     \caption{LIME}
 \end{subfigure}
-\caption{\textbf{All four methods on a sketch saxophone} (sketch model).
+\caption{\textbf{Sketch saxophone, sketch model.}
 The distinctive curved body and bell of the saxophone are highlighted.
 Integrated Gradients traces the specific ink strokes of the drawing with
 high precision.}
 \label{fig:attr_saxophone_sketch}
 \end{figure}
 
-% ── Lion: real model, real domain ─────────────────────────────────────────
+% ═══════════════════════════════════════════════════════════════════════════
+\subsection{Cross-Model Comparison on Sketch Images}
+\label{sec:cross_model_sketch}
+
+A central question is how domain shift affects explanation quality.  Here we
+compare the real model and sketch model on the \emph{same sketch images}.
+The sketch model was trained on sketches and should produce focused, confident
+attributions; the real model has never seen sketches and may struggle.
+
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/lion_0658.png}
-    \caption{Grad-CAM Real lion}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/sketch/bicycle_0195.png}
+    \caption{Real model, Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/lion_0658.png}
-    \caption{Integrated Gradients Real lion}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/bicycle_0195.png}
+    \caption{Sketch model, Grad-CAM}
 \end{subfigure}
-\caption{\textbf{Attribution comparison for a real lion} (real model,
-98.08\% accuracy).  Grad-CAM highlights the face and mane region as a broad
-hot zone.  Integrated Gradients provides finer detail, picking up specific
-facial features like the eyes, nose, and mane edges.  The model is clearly
-attending to the correct semantically meaningful features.}
-\label{fig:attr_lion}
+\caption{\textbf{Sketch bicycle: real model vs.\ sketch model.}
+The sketch model (right) produces a more focused, confident heatmap centred on
+the bicycle's structural features: wheels, frame, handlebars.  The real
+model (left) produces a more diffuse, uncertain heatmap, reflecting its
+difficulty in recognising the object without texture cues.}
+\label{fig:attr_cross_bicycle}
 \end{figure}
 
-% ── Tiger: sketch domain, both models ────────────────────────────────────
+% ── Sketch banana across models ────────────────────────────────────────
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/sketch/banana_0094.png}
+    \caption{Real model, Grad-CAM}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/banana_0094.png}
+    \caption{Sketch model, Grad-CAM}
+\end{subfigure}
+
+\vspace{0.3cm}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/sketch/banana_0094.png}
+    \caption{Real model, Integrated Gradients}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/sketch/banana_0094.png}
+    \caption{Sketch model, Integrated Gradients}
+\end{subfigure}
+\caption{\textbf{Sketch banana: real model vs.\ sketch model.}
+The sketch model produces sharper, more confident attributions because it was
+trained on similar line-art images.  The real model's attributions are more
+scattered, suggesting uncertainty about which features to rely on in an
+unfamiliar visual style.}
+\label{fig:attr_banana_cross}
+\end{figure}
+
+% ── Sketch tiger: both models ────────────────────────────────────
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/sketch/tiger_1381.png}
-    \caption{Real model --- Grad-CAM}
+    \caption{Real model, Grad-CAM}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/sketch/tiger_1381.png}
-    \caption{Sketch model --- Grad-CAM}
+    \caption{Sketch model, Grad-CAM}
 \end{subfigure}
 
 \vspace{0.3cm}
 
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/sketch/tiger_1381.png}
-    \caption{Real model --- LIME}
+    \caption{Real model, LIME}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
     \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/sketch/tiger_1381.png}
-    \caption{Sketch model --- LIME}
+    \caption{Sketch model, LIME}
 \end{subfigure}
 \caption{\textbf{Sketch tiger: real model vs.\ sketch model.}
-The real model struggles with the sketch its heatmap is diffuse and may
+The real model struggles with the sketch, and its heatmap is diffuse and may
 focus on background regions, indicating poor explanation quality under domain
 shift.  The sketch model produces more targeted attributions on the tiger's
 body and stripes.  This illustrates how domain shift degrades not just
 accuracy but also explanation quality.}
 \label{fig:attr_tiger_cross}
+\end{figure}
+
+
+% ═══════════════════════════════════════════════════════════════════════════
+\subsection{Cross-Model Comparison on Real Images}
+\label{sec:cross_model_real}
+
+While the previous subsection showed how models differ on sketch images,
+it is equally important to compare explanations on \emph{real} photographs.
+Even when both models achieve high accuracy on real images, the underlying
+reasoning, as revealed by attribution maps, can differ substantially.
+
+% ── Real tiger: real model vs. sketch model ──────────────────────────────
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/tiger_1405.png}
+    \caption{Real model, Grad-CAM}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/real/tiger_1405.png}
+    \caption{Sketch model, Grad-CAM}
+\end{subfigure}
+
+\vspace{0.3cm}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/tiger_1405.png}
+    \caption{Real model, LIME}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/real/tiger_1405.png}
+    \caption{Sketch model, LIME}
+\end{subfigure}
+\caption{\textbf{Real tiger: real model vs.\ sketch model.}
+On a real photograph, the real model (left) produces texture-focused
+attributions, attending to the tiger's stripes, fur patterns, and colour
+gradients.  The sketch model (right) focuses more on the overall \emph{shape}, specifically the body outline and silhouette, because it learned shape-based features
+from line drawings.  Both models correctly classify the image, but their
+reasoning strategies are fundamentally different.  This demonstrates that
+high accuracy alone does not guarantee consistent explanations.}
+\label{fig:attr_tiger_real_cross}
+\end{figure}
+
+% ── Real lion: real model vs. sketch model ───────────────────────────────
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/lion_0658.png}
+    \caption{Real model, Grad-CAM}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/real/lion_0658.png}
+    \caption{Sketch model, Grad-CAM}
+\end{subfigure}
+
+\vspace{0.3cm}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/lion_0658.png}
+    \caption{Real model, LIME}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/real/lion_0658.png}
+    \caption{Sketch model, LIME}
+\end{subfigure}
+\caption{\textbf{Real lion: real model vs.\ sketch model.}
+The real model highlights the mane's texture and facial detail, features
+rich in colour and texture gradients.  The sketch model focuses on the mane's
+\emph{silhouette} and the face outline.  Despite both models achieving
+similar accuracy on this class, the sketch model's shape-focused attributions
+are more spatially compact and consistent, confirming that shape-based
+representations transfer more cleanly across domains.}
+\label{fig:attr_lion_real_cross}
+\end{figure}
+
+% ── Real bicycle: all 4 methods, real model ──────────────────────────────
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/bicycle_0201.png}
+    \caption{Grad-CAM}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam_pp/real/bicycle_0201.png}
+    \caption{Grad-CAM++}
+\end{subfigure}
+
+\vspace{0.3cm}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/integrated_gradients/real/bicycle_0201.png}
+    \caption{Integrated Gradients}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/bicycle_0201.png}
+    \caption{LIME}
+\end{subfigure}
+\caption{\textbf{All four methods on a real bicycle} (real model).
+Grad-CAM and Grad-CAM++ highlight the wheels and frame as broad spatial
+regions.  Grad-CAM++ provides fuller coverage of both wheels compared to
+Grad-CAM's tighter focus.  Integrated Gradients picks up fine structural
+edges including spokes, pedals, and handlebar outlines.  LIME identifies the
+wheels and frame as the most important superpixel regions.  All methods
+converge on the same key features, demonstrating strong inter-method
+agreement on geometrically distinctive classes.}
+\label{fig:attr_bicycle_real}
+\end{figure}
+
+% ── Real banana: all 4 methods, sketch model ─────────────────────────────
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/real/banana_0100.png}
+    \caption{Grad-CAM}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam_pp/real/banana_0100.png}
+    \caption{Grad-CAM++}
+\end{subfigure}
+
+\vspace{0.3cm}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/integrated_gradients/real/banana_0100.png}
+    \caption{Integrated Gradients}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/real/banana_0100.png}
+    \caption{LIME}
+\end{subfigure}
+\caption{\textbf{All four methods on a real banana} (sketch model).
+Despite being trained exclusively on sketches, the sketch model produces
+clean, focused attributions on the real banana photograph.  The banana's
+simple curved shape is a feature the sketch model learned from line drawings,
+and it transfers perfectly to the real domain.  This is a compelling
+example of shape-based transfer: the model has never seen a real banana
+during training, yet its explanations are as coherent and focused as those
+of the real model on in-domain images.}
+\label{fig:attr_banana_real_sketchmodel}
+\end{figure}
+
+% ── Real bicycle: cross-model comparison ─────────────────────────────────
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/gradcam/real/bicycle_0201.png}
+    \caption{Real model, Grad-CAM}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/gradcam/real/bicycle_0201.png}
+    \caption{Sketch model, Grad-CAM}
+\end{subfigure}
+
+\vspace{0.3cm}
+
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/real_model/attribution_maps/lime/real/bicycle_0201.png}
+    \caption{Real model, LIME}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{output/xai/sketch_model/attribution_maps/lime/real/bicycle_0201.png}
+    \caption{Sketch model, LIME}
+\end{subfigure}
+\caption{\textbf{Real bicycle: real model vs.\ sketch model.}
+The bicycle is a geometrically distinctive class with circular wheels and
+a triangular frame.  Both models focus on the same structural features,
+but the sketch model's attributions are tighter and more shape-focused, as it highlights the wheel outlines and frame geometry specifically.  The real
+model's attributions are broader, incorporating texture and colour information
+from the background and surface details.  This confirms that shape-based
+features (learned from sketches) produce more precise, interpretable
+explanations even on photographs.}
+\label{fig:attr_bicycle_real_cross}
 \end{figure}
 
 
@@ -2429,7 +2585,7 @@ mix the two visual styles?).
     \includegraphics[width=\textwidth]{output/xai/real_model/representations/umap_by_domain.png}
     \caption{UMAP coloured by domain}
 \end{subfigure}
-\caption{\textbf{Real model --- feature space visualisations.}
+\caption{\textbf{Real model, feature space visualisations.}
 The t-SNE by-class plot (a) shows well-separated class clusters for real images,
 but sketch images from the same class often fall outside these clusters.
 The by-domain plot (b) reveals a clear separation between real (blue) and sketch
@@ -2461,11 +2617,10 @@ UMAP (c, d) confirms this pattern with tighter, more separated clusters.}
     \includegraphics[width=\textwidth]{output/xai/sketch_model/representations/umap_by_domain.png}
     \caption{UMAP coloured by domain}
 \end{subfigure}
-\caption{\textbf{Sketch model --- feature space visualisations.}
+\caption{\textbf{Sketch model, feature space visualisations.}
 The by-domain plots (b, d) show substantially more overlap between real and
 sketch points compared to the real model (Figure~\ref{fig:repr_real}).  This
-confirms that the sketch model learns \emph{domain-invariant} representations
---- real and sketch images of the same class are mapped to similar locations
+confirms that the sketch model learns \emph{domain-invariant} representations where real and sketch images of the same class are mapped to similar locations
 in feature space, explaining the sketch model's superior cross-domain transfer.}
 \label{fig:repr_sketch}
 \end{figure}
@@ -2498,13 +2653,13 @@ in feature space, explaining the sketch model's superior cross-domain transfer.}
 
 \subsection{Domain Transfer Asymmetry}
 
-The most striking finding is the \textbf{asymmetric transfer} between domains.
-The sketch$\to$real transfer (83.02\%) substantially outperforms real$\to$sketch
-(56.17\%).  This result aligns with the \emph{texture bias} hypothesis: CNNs
-trained on photographs tend to rely on texture cues (colour gradients, surface
-patterns) that are absent in line drawings.  Conversely, sketch training forces
-the model to rely on \emph{shape-based} features (edges, contours, spatial
-relationships) that are present in both domains.
+The clearest result is the \textbf{asymmetric transfer} between domains.
+Sketch$\to$real transfer (83.02\%) far outperforms real$\to$sketch (56.17\%).
+This fits the \emph{texture bias} hypothesis: CNNs trained on photographs rely
+on texture cues (colour gradients, surface patterns) that are absent in line
+drawings.  Sketch training, on the other hand, forces the model to use
+\emph{shape-based} features (edges, contours, spatial relationships) that exist
+in both domains.
 
 \begin{figure}[H]
 \centering
@@ -2579,11 +2734,11 @@ resolution are more stable under perturbation.}
 
 \subsection{Explanation Quality Under Domain Shift}
 
-Our cross-domain attribution comparisons (Figures~\ref{fig:attr_cross_bicycle},
-\ref{fig:attr_banana_cross}, \ref{fig:attr_tiger_cross}) and the quantitative
-faithfulness results (Section~\ref{sec:faithfulness}) confirm that
-\textbf{domain shift degrades explanation quality}, not just classification
-accuracy.  When the real model is applied to sketches:
+The cross-domain attribution comparisons (Figures~\ref{fig:attr_cross_bicycle},
+\ref{fig:attr_banana_cross}, \ref{fig:attr_tiger_cross}) and the faithfulness
+results (Section~\ref{sec:faithfulness}) show that \textbf{domain shift
+degrades explanation quality}, not just classification accuracy.  When the real
+model is applied to sketches:
 
 \begin{itemize}[leftmargin=*]
     \item Attribution maps become more diffuse and less focused on the object.
@@ -2595,12 +2750,11 @@ accuracy.  When the real model is applied to sketches:
           features.
 \end{itemize}
 
-In contrast, the sketch model's attributions on real images remain relatively
+The sketch model's attributions on real images, by contrast, stay relatively
 focused, and its faithfulness scores are balanced across domains (e.g., LIME
 insertion: 0.55 real vs.\ 0.57 sketch).  The representation analysis
-(Section~\ref{sec:representations}) provides a mechanistic explanation: the
-sketch model's feature space mixes domains, while the real model separates
-them, directly explaining the asymmetric transfer and explanation degradation.
+(Section~\ref{sec:representations}) offers a simple explanation: the sketch
+model's feature space mixes domains, while the real model separates them.
 
 \subsection{Implications for Practitioner Choice}
 
@@ -2661,49 +2815,57 @@ The complete pipeline consists of four stages executed sequentially:
 
 
 % ══════════════════════════════════════════════════════════════════════════════
+\section{Code and Data Availability}
+\label{sec:code_data}
+
+All source code for this project (model training, XAI attribution generation,
+evaluation pipelines, and visualisation scripts) is publicly available:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Project Repository:} \url{https://github.com/prerakpatel51/explainable_ai_project}
+    \item \textbf{Dataset (DomainNet):} \url{https://ai.bu.edu/DomainNet/}
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
 \section{Conclusion}
 \label{sec:conclusion}
 
-This study presents a systematic evaluation of four XAI attribution methods
-applied to ResNet-152 classifiers trained on two visual domains from DomainNet.
-Our key findings are:
+We evaluated four XAI attribution methods on ResNet-152 classifiers trained on
+two visual domains from DomainNet.  Our main findings:
 
 \begin{enumerate}[leftmargin=*]
     \item \textbf{Sketch-trained models generalise better:}  The sketch model
           transfers to real images (83.02\%) far more effectively than the real
-          model transfers to sketches (56.17\%), confirming that shape-based
-          representations are more domain-invariant than texture-based ones.
+          model transfers to sketches (56.17\%).  Shape-based representations
+          are more domain-invariant than texture-based ones.
 
-    \item \textbf{Domain shift degrades explanations:}  Not only does
-          classification accuracy drop under domain shift, but the quality of
-          XAI explanations also deteriorates attributions become diffuse,
-          unfocused, and less semantically meaningful.
+    \item \textbf{Domain shift degrades explanations:}  Classification accuracy
+          drops under domain shift, and so does explanation quality, and attributions become diffuse, unfocused, and less semantically
+          meaningful.
 
     \item \textbf{CAM-based methods are most stable and consistent:}
           Grad-CAM++ achieves the highest stability (SSIM $\approx 0.94$) and
           cross-domain consistency (cosine similarity $\geq 0.96$) across both
-          models, making it the most reliable choice for applications requiring
-          consistent explanations.
+          models.
 
     \item \textbf{LIME is the most faithful:}  Despite low stability, LIME
-          achieves the highest insertion AUC ($\approx 0.57$--$0.61$),
-          demonstrating that its superpixel-based explanations best capture
-          the features the model actually relies on.
+          achieves the highest insertion AUC ($\approx 0.57$--$0.61$).  Its
+          superpixel-based explanations capture the features the model actually
+          relies on better than the other methods.
 
     \item \textbf{Granularity-stability trade-off:}  Pixel-level methods
-          (Integrated Gradients, LIME) provide finer spatial detail but are
-          significantly less stable under input perturbation (SSIM $\approx
-          0.47$--$0.56$).
+          (Integrated Gradients, LIME) give finer spatial detail but are less
+          stable under input perturbation (SSIM $\approx 0.47$--$0.56$).
 
     \item \textbf{Domain-invariant representations explain transfer:}
           The sketch model's feature space intermixes real and sketch images
-          (visible in t-SNE/UMAP), while the real model separates them 
-          directly explaining the asymmetric transfer performance.
+          (visible in t-SNE/UMAP), while the real model separates them.
+          This directly accounts for the asymmetric transfer performance.
 
-    \item \textbf{XAI evaluation must be multi-axis:}  No single method
-          dominates across all evaluation criteria.  A comprehensive assessment
-          requires measuring stability, faithfulness, cross-domain consistency,
-          and representation structure jointly.
+    \item \textbf{No single XAI method wins everywhere:}  Each method has
+          strengths in different axes.  Evaluating explanations requires
+          measuring stability, faithfulness, cross-domain consistency, and
+          representation structure together.
 \end{enumerate}
 
 \subsection{Future Work}
@@ -2815,5 +2977,7 @@ in \emph{Proc.\ ICLR}, 2018.
 \bottomrule
 \end{tabular}
 \end{table}
+
+\end{document}
 
 \end{document}

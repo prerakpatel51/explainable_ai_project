@@ -1,21 +1,78 @@
 # Explainable AI on DomainNet: Cross-Domain Attribution Analysis
 
-A deep learning + explainability research project that trains **ResNet-152** classifiers on the [DomainNet](http://ai.bu.edu/M3SDA/) benchmark and rigorously evaluates **four XAI attribution methods** across two visual domains — photographic (*real*) and hand-drawn (*sketch*).
+A deep learning + explainability project built on the [DomainNet](http://ai.bu.edu/M3SDA/) benchmark. It trains **ResNet-152** classifiers on two very different visual domains photographic (*real*) and hand-drawn (*sketch*) and compares **four XAI attribution methods** across both.
 
 The central question this project answers:
 
-> *When a neural network is trained on one visual style, do its explanations remain consistent, faithful, and stable — even on images it has never seen before?*
+> *When a neural network is trained on one visual style, do its explanations remain consistent, faithful, and stable even on images it has never seen before?*
+
+## Top Results Summary
+
+- **Best in-domain accuracy:** The real-trained model on real images reached **93.63%** accuracy with **0.9288** macro F1.
+- **Best cross-domain accuracy:** The sketch-trained model transferred best, reaching **83.02%** accuracy and **0.8164** macro F1 on real images.
+- **Most stable XAI method:** **Grad-CAM++** was the steadiest method overall, with SSIM as high as **0.946**.
+- **Most faithful XAI method:** **LIME** performed best on insertion AUC (**0.609** for the real model and **0.571** for the sketch model).
+- **Main takeaway:** Models trained on sketches seem to learn features that carry over better, and their explanations hold up better under domain shift.
+
+> [NOTE]
+> **What's novel here?** Most XAI projects stop at showing heatmaps. This one asks a harder question: what happens to those explanations when the visual domain changes? To answer that, the project measures **stability, faithfulness, cross-domain consistency, and representation behavior** instead of treating explanations as convincing by default.
+
+## Sample Visual Banner
+
+<p align="center">
+  <img src="docs/images/attribution_maps/gradcam_real_model_sketch_bicycle.png" width="30%" alt="Real-model bicycle explanation example"/>
+  <img src="docs/images/attribution_maps/gradcam_sketch_model_sketch_bicycle.png" width="30%" alt="Sketch-model bicycle explanation example"/>
+  <img src="docs/images/attribution_maps/cross_domain/gradcam_real_model_sketch_banana.png" width="30%" alt="Cross-domain explanation comparison example"/>
+</p>
+<p align="center"> A bicycle explained by the real-image-trained model, the same class explained by the sketch-image-trained model, and a cross-domain banana example showing how attention changes under domain shift.</p>
+
+## Quick Start
+
+```bash
+git clone git@github.com:prerakpatel51/xai_project.git
+cd xai_project
+
+conda create -n xai python=3.10 -y
+conda activate xai
+pip install -r requirements.txt
+```
+
+Place the DomainNet `real/` and `sketch/` folders in the project root, then run:
+
+```bash
+python prepare_data.py
+python train.py --domain real
+python train.py --domain sketch
+python evaluate.py --checkpoint output/models/real/best_model.pt --test_domain real
+python evaluate.py --checkpoint output/models/real/best_model.pt --test_domain sketch
+python explain.py --checkpoint output/models/real/best_model.pt --domain real --output_dir output/xai/real_model
+```
+
+For full end-to-end cluster runs, use `sbatch run_real.sh` or `sbatch run_sketch.sh`.
+
+## Results Snapshot
+
+| Model trained on | Tested on | Accuracy | Macro F1 | Key XAI takeaway |
+|------------------|-----------|----------|----------|------------------|
+| Real | Real | **93.63%** | **0.9288** | Strong in-domain performance, though the model still leans on texture-heavy cues |
+| Real | Sketch | 56.17% | 0.5695 | Biggest drop under domain shift; explanations get less focused and less reliable |
+| Sketch | Sketch | 80.62% | 0.8087 | Lower in-domain ceiling than photos, but the model relies more on shape |
+| Sketch | Real | **83.02%** | **0.8164** | Best cross-domain result; sketch training leads to more transferable explanations |
 
 <p align="center">
   <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM on real ladder"/>
   <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME on real ladder"/>
 </p>
-<p align="center"><em>Grad-CAM (left) and LIME (right) attribution maps on a real ladder — highlighting where the model looks to make its prediction.</em></p>
+<p align="center">Grad-CAM (left) and LIME (right) attribution maps on a real ladder, showing the regions the model leans on for its prediction.</p>
 
 ---
 
 ## Table of Contents
 
+- [Top Results Summary](#top-results-summary)
+- [Sample Visual Banner](#sample-visual-banner)
+- [Quick Start](#quick-start)
+- [Results Snapshot](#results-snapshot)
 - [Why This Project?](#why-this-project)
 - [Background & Related Work](#background--related-work)
 - [Dataset & Classes](#dataset--classes)
@@ -57,23 +114,23 @@ The central question this project answers:
 
 Deep neural networks achieve state-of-the-art performance on visual recognition tasks, yet their internal decision processes remain opaque. Explainable AI (XAI) methods attempt to open this "black box" by attributing predictions to input features, but the reliability of these explanations is often taken for granted.
 
-A critical challenge in deploying deep learning models is **domain shift** — the performance degradation that occurs when a model trained on one data distribution is applied to a different but related distribution. Domain shift is pervasive in real-world applications: a medical imaging model trained on data from one hospital may fail when applied to images from another; an autonomous driving system trained in sunny conditions may struggle in rain or fog.
+One of the hard parts of using deep learning in the real world is **domain shift**. A model can look strong on the data it was trained on, then drop off when the input style changes even if the task itself stays the same. That shows up everywhere: medical scans from different hospitals, driving footage in different weather, or in this case, photos versus sketches.
 
-Understanding *how* a model's reasoning changes under domain shift is arguably even more important than measuring the accuracy drop itself, because it reveals whether the model has learned genuinely transferable concepts or merely domain-specific shortcuts.
+Accuracy only tells part of the story. The more interesting question is whether the model is still relying on the right features when the domain changes, or if it falls back on shortcuts that do not transfer.
 
-This project investigates these questions using the **DomainNet** benchmark, which contains images of the same object categories rendered in six distinct visual styles. By training separate classifiers on the *real* (photographic) and *sketch* (hand-drawn) domains and then applying multiple XAI techniques, we systematically study:
+This project uses **DomainNet**, which contains the same object classes across several visual styles. I focus on *real* images and *sketch* images, train one model on each, and then compare how their explanations behave:
 
 - **How domain shift affects model behaviour:** Does the model still focus on semantically meaningful object parts when shown an unfamiliar visual style, or does it rely on domain-specific artifacts?
 - **How domain shift affects explanations:** Do attribution maps remain stable, faithful, and consistent when the input domain changes?
 - **What features transfer across domains:** By comparing real-trained and sketch-trained models, we can identify whether texture-based or shape-based features lead to more robust reasoning under distribution shift.
 - **Which XAI methods are most reliable:** Some explanation methods may appear informative in-domain but produce misleading or unstable attributions under domain shift, making them unreliable for safety-critical applications.
 
-### What This Project Contributes
+### What This Project Covers
 
 1. **Cross-domain classification pipeline:** Two independent ResNet-152 models trained with modern techniques (mixup, cosine annealing, differential learning rates, frozen warm-up) on balanced 81-class subsets of DomainNet, evaluated in both in-domain and cross-domain settings.
-2. **Four-axis XAI evaluation under domain shift:** A rigorous framework that measures stability, faithfulness, cross-domain consistency, and representation behaviour for four attribution methods, specifically designed to test how explanations degrade when the input distribution changes.
-3. **Comparative analysis:** Quantitative comparison of Grad-CAM, Grad-CAM++, Integrated Gradients, and LIME across two visual domains, revealing trade-offs between explanation granularity, stability, and faithfulness — and demonstrating that explanation reliability is *not* guaranteed even when classification accuracy remains high.
-4. **Evidence for the shape bias hypothesis:** Our results provide direct evidence that sketch-trained models learn more transferable, shape-based representations, while photo-trained models exhibit texture bias that degrades both predictions and explanations under domain shift.
+2. **Four-axis XAI evaluation under domain shift:** Stability, faithfulness, cross-domain consistency, and representation behaviour are all measured, so the explanations are not judged from a single angle.
+3. **Method comparison:** Grad-CAM, Grad-CAM++, Integrated Gradients, and LIME are compared across both domains, showing the trade-offs between detail, stability, and faithfulness.
+4. **A shape-bias result:** The sketch-trained model learns features that transfer better, while the real-trained model is more affected by texture bias when it moves out of domain.
 
 ---
 
@@ -83,7 +140,7 @@ This project investigates these questions using the **DomainNet** benchmark, whi
 
 **DomainNet** (Peng et al., 2019) is a large-scale benchmark for multi-source domain adaptation containing ~0.6 million images across 345 categories and 6 visual domains. Prior work has used it primarily for domain adaptation and transfer learning; our focus on XAI evaluation across domains is novel.
 
-Geirhos et al. (2019) demonstrated that ImageNet-trained CNNs exhibit a strong **texture bias**, relying on local texture patterns rather than global shape for classification. This finding motivates our comparison of real-trained (texture-rich) and sketch-trained (shape-only) models — and turned out to be one of the most important insights from this project.
+Geirhos et al. (2019) demonstrated that ImageNet-trained CNNs exhibit a strong **texture bias**, relying on local texture patterns rather than global shape for classification. This finding motivates our comparison of real-trained (texture-rich) and sketch-trained (shape-only) models and turned out to be one of the most important insights from this project.
 
 ---
 
@@ -96,7 +153,7 @@ Geirhos et al. (2019) demonstrated that ImageNet-trained CNNs exhibit a strong *
 | `real`   | Photographs from the internet           | Photo-realistic      |
 | `sketch` | Hand-drawn pencil / line-art sketches   | Abstract / structural |
 
-**81 classes** were selected from the original 345. Two independent models are trained — one per domain — and then cross-evaluated and explained. The XAI pipeline applies four attribution methods and measures each along four quantitative axes, producing a complete picture of *how* and *how reliably* the models reason.
+**81 classes** were selected from the original 345. Two independent models are trained one per domain and then cross-evaluated and explained. The XAI pipeline applies four attribution methods and measures each along four quantitative axes, producing a complete picture of *how* and *how reliably* the models reason.
 
 The 81 retained classes span 10 semantic groups:
 
@@ -194,22 +251,22 @@ Raw DomainNet Images
 
 ---
 
-## Step 1 — Data Preparation (`prepare_data.py`)
+## Step 1 Data Preparation (`prepare_data.py`)
 
 **Goal:** Build clean, balanced, reproducible train/val/test splits from raw DomainNet folders.
 
 ### What it does
 
 1. **Scans** the `real/` and `sketch/` directories for images matching the 81 selected classes.
-2. **Stratified splitting** — each class maintains its proportion across train / val / test:
+2. **Stratified splitting**  each class maintains its proportion across train / val / test:
    - 80% training, 10% validation, 10% test
    - Uses `sklearn.model_selection.train_test_split` with `stratify=labels` and a fixed seed (`random_state=42`)
-3. **Cross-domain oversampling balance** — since `real` and `sketch` have different per-class counts, the training sets are balanced:
+3. **Cross-domain oversampling balance**  since `real` and `sketch` have different per-class counts, the training sets are balanced:
    - For each class: `target_count = max(real_count, sketch_count)`
    - The smaller domain is oversampled by randomly duplicating entries
-   - Val / test splits are **never** modified — only training is balanced
+   - Val / test splits are **never** modified only training is balanced
    - Training augmentations (random crop, flip, jitter) make duplicated images look different each epoch
-4. **Class weight computation** — inverse-frequency weights for the loss function:
+4. **Class weight computation**  inverse-frequency weights for the loss function:
    ```
    weight_c = total_samples / (num_classes × count_c)
    ```
@@ -217,13 +274,13 @@ Raw DomainNet Images
 
 ### Key design decisions
 
-- Val/test are held out before balancing — this prevents data leakage and ensures unbiased evaluation.
+- Val/test are held out before balancing this prevents data leakage and ensures unbiased evaluation.
 - Labels are assigned by **sorted** class name, making the mapping deterministic and reproducible.
 - A fixed `random_state=42` is used throughout for reproducibility.
 
 ---
 
-## Step 2 — Model Training (`train.py`)
+## Step 2 Model Training (`train.py`)
 
 **Goal:** Train a high-accuracy classifier on either the `real` or `sketch` domain using transfer learning from ImageNet.
 
@@ -252,7 +309,7 @@ This allows the new FC head and the higher-level feature layers (`layer3`, `laye
 
 #### Differential learning rates
 
-Even after unfreezing, the pretrained backbone and the new head should not be updated at the same rate. The backbone already contains useful features learned from 1.2 million ImageNet images; aggressive updates would cause **catastrophic forgetting** — the phenomenon where a neural network forgets previously learned knowledge when trained on new data.
+Even after unfreezing, the pretrained backbone and the new head should not be updated at the same rate. The backbone already contains useful features learned from 1.2 million ImageNet images; aggressive updates would cause **catastrophic forgetting** the phenomenon where a neural network forgets previously learned knowledge when trained on new data.
 
 - Backbone parameters: `lr × 0.1`
 - FC head parameters: `lr` (full learning rate)
@@ -279,13 +336,13 @@ mixed_x = λ × x_i + (1 − λ) × x_j    where λ ~ Beta(0.2, 0.2)
 loss = λ × CE(pred, y_i) + (1 − λ) × CE(pred, y_j)
 ```
 
-The Beta(0.2, 0.2) distribution is U-shaped, meaning λ tends to be close to 0 or 1 — so most mixed images look mostly like one of the two originals, with a subtle blend of the other. Mixup serves several purposes:
+The Beta(0.2, 0.2) distribution is U-shaped, meaning λ tends to be close to 0 or 1 so most mixed images look mostly like one of the two originals, with a subtle blend of the other. Mixup serves several purposes:
 
 - **Regularisation:** Prevents the model from memorising individual training images, reducing overfitting.
 - **Smoother decision boundaries:** The model learns to make gradual transitions between classes rather than sharp, brittle boundaries.
 - **Improved cross-domain generalisation:** By training on interpolated images, the model is exposed to visual variations not present in the original dataset.
 
-Note that mixup causes training accuracy to appear lower than validation accuracy — this is expected, since the model is trained on blended images but evaluated on clean ones.
+Note that mixup causes training accuracy to appear lower than validation accuracy this is expected, since the model is trained on blended images but evaluated on clean ones.
 
 #### Weighted CrossEntropy + label smoothing
 
@@ -328,9 +385,9 @@ Training was performed on an HPC cluster using SLURM:
 
 ---
 
-## Step 3 — Evaluation (`evaluate.py`)
+## Step 3 Evaluation (`evaluate.py`)
 
-**Goal:** Comprehensively evaluate a trained model — both in-domain and cross-domain — and visualize results.
+**Goal:** Comprehensively evaluate a trained model both in-domain and cross-domain and visualize results.
 
 ### Metrics computed
 
@@ -345,10 +402,10 @@ Training was performed on an HPC cluster using SLURM:
 
 ### Outputs generated
 
-- **Confusion matrix** heatmap (81×81) — highlights systematic class confusions.
-- **Training curves** — loss, accuracy, F1, precision, recall, and learning rate over epochs.
-- **Per-class bar charts** — sorted by performance to identify hard and easy classes.
-- **Random sample predictions** — a grid of test images with predicted vs. true labels.
+- **Confusion matrix** heatmap (81×81) highlights systematic class confusions.
+- **Training curves**  loss, accuracy, F1, precision, recall, and learning rate over epochs.
+- **Per-class bar charts**  sorted by performance to identify hard and easy classes.
+- **Random sample predictions**  a grid of test images with predicted vs. true labels.
 - All numeric results exported to CSV for downstream analysis.
 
 ### Evaluation scenarios
@@ -366,15 +423,15 @@ Cross-domain evaluation reveals how well the model generalizes to a different vi
 
 ---
 
-## Step 4 — XAI Explainability (`explain.py`)
+## Step 4  XAI Explainability (`explain.py`)
 
-**Goal:** Apply four attribution methods to the trained model and rigorously measure explanation quality along four axes.
+**Goal:** Apply four attribution methods to the trained model and measure explanation quality along four axes.
 
-Deep neural networks achieve impressive accuracy, but they function as "black boxes" — they don't explain *why* they make a prediction. **Attribution methods** (also called *saliency methods*) address this by assigning an importance score to every spatial location in the input image. The result is a **heatmap** that highlights the pixels or regions most influential to the model's decision. For example, if the model predicts "ladder", the heatmap should highlight the rungs and rails rather than the background.
+Deep neural networks achieve impressive accuracy, but they function as "black boxes" they don't explain *why* they make a prediction. **Attribution methods** (also called *saliency methods*) address this by assigning an importance score to every spatial location in the input image. The result is a **heatmap** that highlights the pixels or regions most influential to the model's decision. For example, if the model predicts "ladder", the heatmap should highlight the rungs and rails rather than the background.
 
-In this project we apply four complementary attribution methods. Each takes a different approach to the same question: *"Which pixels drove the model to predict this class?"* Understanding the differences between these methods is essential for interpreting the results.
+This project uses four complementary attribution methods. Each answers the same basic question in a different way: *"Which pixels pushed the model toward this prediction?"* That matters because the methods behave quite differently once you compare them side by side.
 
-> **New to AI? Start here:** When an AI looks at a photo and says "this is a tiger," it doesn't explain *why* — it's a black box. The four methods below are different techniques to "peek inside the box" and generate visual explanations (heatmaps) showing which parts of the image the AI relied on. Each method produces a coloured overlay on the original photo: **warm colours (red/orange/yellow) = important regions**, **cool colours (blue/dark blue) = unimportant regions**. Think of it like asking four different experts to explain the same AI decision — they each use a different strategy, so their answers look slightly different, but if they all agree on the same region, we can be confident that region truly matters to the AI.
+> **New to AI? Start here:** When an AI looks at a photo and says "this is a tiger," it doesn't explain *why*  it's a black box. The four methods below are different techniques to "peek inside the box" and generate visual explanations (heatmaps) showing which parts of the image the AI relied on. Each method produces a coloured overlay on the original photo: **warm colours (red/orange/yellow) = important regions**, **cool colours (blue/dark blue) = unimportant regions**. Think of it like asking four different experts to explain the same AI decision they each use a different strategy, so their answers look slightly different, but if they all agree on the same region, we can be confident that region truly matters to the AI.
 
 ---
 
@@ -382,16 +439,16 @@ In this project we apply four complementary attribution methods. Each takes a di
 
 **Gradient-weighted Class Activation Mapping**
 
-> **Plain English:** Imagine you ask a friend to identify an animal in a photo, and they say "tiger." You then ask: "Where are you looking that makes you say tiger?" Grad-CAM answers exactly this question — it produces a heatmap (like a thermal camera image) showing which *regions* of the photo the AI focused on most. Red/warm areas = "I looked here a lot"; blue/cool areas = "I mostly ignored this part." It's like putting a heat-sensing camera on the AI's "eyes."
+> **Plain English:** Imagine you ask a friend to identify an animal in a photo, and they say "tiger." You then ask: "Where are you looking that makes you say tiger?" Grad-CAM answers exactly this question it produces a heatmap (like a thermal camera image) showing which *regions* of the photo the AI focused on most. Red/warm areas = "I looked here a lot"; blue/cool areas = "I mostly ignored this part." It's like putting a heat-sensing camera on the AI's "eyes."
 
-Grad-CAM is one of the most widely used XAI methods in computer vision. It works by looking at the *last convolutional layer* of the network — the layer that still retains spatial information (it knows *where* things are) while also encoding high-level semantic concepts (it knows *what* things look like).
+Grad-CAM is one of the most widely used XAI methods in computer vision. It works by looking at the *last convolutional layer* of the network the layer that still retains spatial information (it knows *where* things are) while also encoding high-level semantic concepts (it knows *what* things look like).
 
 #### Background: Why the last convolutional layer?
 
 A CNN like ResNet-152 processes an image through progressively more abstract layers:
 - **Early layers** (conv1, layer1): detect edges, corners, colour gradients
 - **Middle layers** (layer2, layer3): combine these into textures, parts, object fragments
-- **Late layers** (layer4): detect high-level concepts — "this region contains a wheel", "this region has a face"
+- **Late layers** (layer4): detect high-level concepts "this region contains a wheel", "this region has a face"
 
 After layer4, the spatial information is collapsed by global average pooling into a single vector, and a fully connected layer produces class scores. Grad-CAM taps in *just before* this collapse, capturing both what the model has learned and where each concept appears in the image.
 
@@ -411,27 +468,27 @@ After layer4, the spatial information is collapsed by global average pooling int
    ```
    L_GradCAM = ReLU( Σ_k α_k × A_k )
    ```
-   The ReLU clips negative values to zero — negative values correspond to features of *other* classes. When explaining "ladder", we don't want to highlight regions that look like "bicycle".
+   The ReLU clips negative values to zero negative values correspond to features of *other* classes. When explaining "ladder", we don't want to highlight regions that look like "bicycle".
 
 5. **Upsampling:** The 7×7 heatmap is bilinearly interpolated to 224×224 to overlay on the original image.
 
 **Strengths:** Fast (one forward + backward pass), class-discriminative (different classes → different heatmaps), intuitive output.
 
-**Limitations:** Coarse resolution (7×7 base) — shows *which region* matters but not *which specific pixels*. Tends to highlight only the most discriminative part of an object (e.g., the face but not the body). No formal mathematical guarantees.
+**Limitations:** Coarse resolution (7×7 base) shows *which region* matters but not *which specific pixels*. Tends to highlight only the most discriminative part of an object (e.g., the face but not the body). No formal mathematical guarantees.
 
 <p align="center">
   <img src="docs/images/attribution_maps/gradcam_real_tiger.png" width="45%" alt="Grad-CAM on real tiger"/>
   <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM on real ladder"/>
 </p>
-<p align="center"><em>Grad-CAM on a real tiger (left) and a real ladder (right). The broad heatmap correctly covers the tiger's head/body and the ladder's A-frame structure, but fine details are lost at 7×7 resolution.</em></p>
+<p align="center">Grad-CAM on a real tiger (left) and a real ladder (right). The broad heatmap correctly covers the tiger's head/body and the ladder's A-frame structure, but fine details are lost at 7×7 resolution.</p>
 
-> **How to read these images:** Each attribution map shows three panels — **Original** (the input photo), **Heatmap** (the AI's attention map, where red = high importance, blue = low importance), and **Overlay** (the heatmap placed on top of the original so you can see exactly which parts the AI cared about). In the tiger example, notice how the red region sits right on the tiger's face and body — that's the AI saying "I see stripes and a feline shape here, so I predict tiger." The blue background means "this part didn't help me decide." For the ladder, the heatmap covers the rungs and rails — the distinctive structural features.
+> **How to read these images:** Each attribution map shows three panels **Original** (the input photo), **Heatmap** (the AI's attention map, where red = high importance, blue = low importance), and **Overlay** (the heatmap placed on top of the original so you can see exactly which parts the AI cared about). In the tiger example, notice how the red region sits right on the tiger's face and body that's the AI saying "I see stripes and a feline shape here, so I predict tiger." The blue background means "this part didn't help me decide." For the ladder, the heatmap covers the rungs and rails the distinctive structural features.
 
 ---
 
 ### Method 2: Grad-CAM++
 
-> **Plain English:** Grad-CAM is like asking someone "roughly where did you look?" — they point at the general area. Grad-CAM++ is like asking "show me *everything* that caught your eye." If you show the AI a photo with two cats, regular Grad-CAM might only highlight one cat. Grad-CAM++ would highlight both, because it pays attention to every part of the image that contributed to the "cat" prediction, not just the single strongest signal.
+> **Plain English:** Grad-CAM is like asking someone "roughly where did you look?" they point at the general area. Grad-CAM++ is like asking "show me *everything* that caught your eye." If you show the AI a photo with two cats, regular Grad-CAM might only highlight one cat. Grad-CAM++ would highlight both, because it pays attention to every part of the image that contributed to the "cat" prediction, not just the single strongest signal.
 
 An improved version of Grad-CAM that addresses two practical problems: (1) Grad-CAM often highlights only the most discriminative part of an object (face of a dog but not the body), and (2) it struggles when multiple instances of the same class appear (a flock of birds).
 
@@ -454,21 +511,21 @@ Grad-CAM asks: "On average across all positions, does this channel help predict 
   <img src="docs/images/attribution_maps/gradcampp_real_tiger.png" width="45%" alt="Grad-CAM++ on real tiger"/>
   <img src="docs/images/attribution_maps/gradcampp_real_ladder.png" width="45%" alt="Grad-CAM++ on real ladder"/>
 </p>
-<p align="center"><em>Grad-CAM++ on the same tiger (left) and ladder (right). Note the broader, more complete coverage — Grad-CAM++ highlights the full tiger body and the entire ladder structure compared to Grad-CAM's tighter focus.</em></p>
+<p align="center">Grad-CAM++ on the same tiger (left) and ladder (right). Note the broader, more complete coverage Grad-CAM++ highlights the full tiger body and the entire ladder structure compared to Grad-CAM's tighter focus.</p>
 
-> **Comparing Grad-CAM vs. Grad-CAM++:** Look at the tiger images above versus the Grad-CAM tiger in the previous section. Grad-CAM's red zone is concentrated around the face (the single most "tiger-like" feature). Grad-CAM++ spreads the red region across the full body — the face *and* the striped torso — giving a more complete picture of what the AI considers important. Think of it like this: Grad-CAM says "the face is the #1 reason I think tiger"; Grad-CAM++ says "the face, body, and stripes *all together* are why I think tiger." Both are still coarse (blocky), since they work from the same 7×7 grid.
+> **Comparing Grad-CAM vs. Grad-CAM++:** Look at the tiger images above versus the Grad-CAM tiger in the previous section. Grad-CAM's red zone is concentrated around the face (the single most "tiger-like" feature). Grad-CAM++ spreads the red region across the full body the face *and* the striped torso giving a more complete picture of what the AI considers important. Think of it like this: Grad-CAM says "the face is the #1 reason I think tiger"; Grad-CAM++ says "the face, body, and stripes *all together* are why I think tiger." Both are still coarse (blocky), since they work from the same 7×7 grid.
 
 ---
 
 ### Method 3: Integrated Gradients
 
-> **Plain English:** Imagine you start with a completely black screen and slowly "fade in" the photograph, pixel by pixel. At some point during this fade-in, the AI suddenly goes "Oh! That's a tiger!" Integrated Gradients tracks *which pixels* caused that "aha moment." Unlike Grad-CAM (which gives you a blurry overview), this method gives you a *detailed, pixel-by-pixel* answer — it can point to individual stripes on a tiger or individual rungs on a ladder. The trade-off is that the result looks more like a scattered constellation of important dots rather than a clean highlighted region.
+> **Plain English:** Imagine you start with a completely black screen and slowly "fade in" the photograph, pixel by pixel. At some point during this fade-in, the AI suddenly goes "Oh! That's a tiger!" Integrated Gradients tracks *which pixels* caused that "aha moment." Unlike Grad-CAM (which gives you a blurry overview), this method gives you a *detailed, pixel-by-pixel* answer it can point to individual stripes on a tiger or individual rungs on a ladder. The trade-off is that the result looks more like a scattered constellation of important dots rather than a clean highlighted region.
 
 A gradient-based attribution method with a formal axiomatic foundation. Unlike CAM-based methods that operate on intermediate feature maps, Integrated Gradients computes attributions directly at the **input pixel level**, producing 224×224 resolution.
 
 #### The problem with simple gradients
 
-You might think: "Just compute the gradient of the class score with respect to each pixel — large gradients mean important pixels." This is called the *vanilla gradient* approach, and it has a critical flaw: **gradient saturation**. Neural networks with ReLU activations have flat regions where the gradient is zero even though the feature is important. A pixel might be crucial for recognition, but if the network is saturated, the gradient is zero and the pixel gets no attribution.
+You might think: "Just compute the gradient of the class score with respect to each pixel large gradients mean important pixels." This is called the *vanilla gradient* approach, and it has a critical flaw: **gradient saturation**. Neural networks with ReLU activations have flat regions where the gradient is zero even though the feature is important. A pixel might be crucial for recognition, but if the network is saturated, the gradient is zero and the pixel gets no attribution.
 
 #### Axiomatic foundation
 
@@ -479,7 +536,7 @@ Integrated Gradients satisfies two formal axioms that any "fair" attribution met
 
 #### Step-by-step computation
 
-1. **Choose a baseline x':** A black image (zero tensor after normalization) representing "absence of information" — what the model sees when "nothing" is present.
+1. **Choose a baseline x':** A black image (zero tensor after normalization) representing "absence of information" what the model sees when "nothing" is present.
 
 2. **Create interpolated images:** Generate n=100 intermediate images that gradually blend from baseline to input:
    ```
@@ -499,7 +556,7 @@ Integrated Gradients satisfies two formal axioms that any "fair" attribution met
 
 #### Why integration helps
 
-Consider a pixel vital for recognizing a tiger's stripe. At the baseline (black), this pixel contributes nothing. As we fade in, there's a critical moment when this pixel "activates" the stripe detector — the gradient spikes. By integrating over the entire path, IG captures this spike even if the gradient is zero at the endpoints. Simple gradient methods would miss it entirely.
+Consider a pixel vital for recognizing a tiger's stripe. At the baseline (black), this pixel contributes nothing. As we fade in, there's a critical moment when this pixel "activates" the stripe detector the gradient spikes. By integrating over the entire path, IG captures this spike even if the gradient is zero at the endpoints. Simple gradient methods would miss it entirely.
 
 **Strengths:** Pixel-level resolution (224×224), mathematically principled (axiomatic guarantees), architecture-agnostic (works for any differentiable model).
 
@@ -509,9 +566,9 @@ Consider a pixel vital for recognizing a tiger's stripe. At the baseline (black)
   <img src="docs/images/attribution_maps/ig_real_tiger.png" width="45%" alt="Integrated Gradients on real tiger"/>
   <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="Integrated Gradients on real ladder"/>
 </p>
-<p align="center"><em>Integrated Gradients on the same tiger (left) and ladder (right). Pixel-level detail picks up individual stripes/fur texture on the tiger and individual rung edges on the ladder, but the output is sparser and noisier than CAM methods.</em></p>
+<p align="center">Integrated Gradients on the same tiger (left) and ladder (right). Pixel-level detail picks up individual stripes/fur texture on the tiger and individual rung edges on the ladder, but the output is sparser and noisier than CAM methods.</p>
 
-> **How to read IG maps:** The heatmap here looks very different from Grad-CAM — instead of large smooth red blobs, you see scattered bright spots and thin lines. Each bright spot is a specific pixel that the "fade-in" experiment identified as important. On the tiger, you can actually trace the outline of the stripes. On the ladder, individual rung edges light up as thin lines. The result is much more detailed than Grad-CAM (full 224×224 pixel resolution vs. a blurry 7×7 grid), but also noisier — your eye has to work harder to see the pattern. Think of it as the difference between a low-resolution satellite photo (Grad-CAM) and a high-resolution one with some static (IG).
+> **How to read IG maps:** The heatmap here looks very different from Grad-CAM instead of large smooth red blobs, you see scattered bright spots and thin lines. Each bright spot is a specific pixel that the "fade-in" experiment identified as important. On the tiger, you can actually trace the outline of the stripes. On the ladder, individual rung edges light up as thin lines. The result is much more detailed than Grad-CAM (full 224×224 pixel resolution vs. a blurry 7×7 grid), but also noisier your eye has to work harder to see the pattern. Think of it as the difference between a low-resolution satellite photo (Grad-CAM) and a high-resolution one with some static (IG).
 
 ---
 
@@ -519,17 +576,17 @@ Consider a pixel vital for recognizing a tiger's stripe. At the baseline (black)
 
 **Local Interpretable Model-agnostic Explanations**
 
-> **Plain English:** LIME works like a detective testing what matters in a photo. Imagine you have a photo the AI says is a "tiger." LIME chops the image into puzzle-piece-like regions (called superpixels), then plays a game: it covers up different combinations of pieces with grey and asks the AI "is this still a tiger?" each time. If covering the tiger's face makes the AI confused, that piece must be important. If covering a tree in the background changes nothing, that piece doesn't matter. After thousands of these experiments, LIME ranks each puzzle piece by how much the AI needs it. The key difference from all previous methods: **LIME doesn't need to know anything about how the AI works internally** — it just needs to be able to ask the AI questions and observe its answers.
+> **Plain English:** LIME works like a detective testing what matters in a photo. Imagine you have a photo the AI says is a "tiger." LIME chops the image into puzzle-piece-like regions (called superpixels), then plays a game: it covers up different combinations of pieces with grey and asks the AI "is this still a tiger?" each time. If covering the tiger's face makes the AI confused, that piece must be important. If covering a tree in the background changes nothing, that piece doesn't matter. After thousands of these experiments, LIME ranks each puzzle piece by how much the AI needs it. The key difference from all previous methods: **LIME doesn't need to know anything about how the AI works internally** it just needs to be able to ask the AI questions and observe its answers.
 
 LIME takes a fundamentally different philosophy: it does *not* look inside the network at all. It treats the neural network as a complete **black box** and explains predictions by observing how the model's output changes when parts of the input are hidden.
 
 #### The core idea
 
-Imagine covering parts of a photograph with grey patches and seeing how the prediction changes. If covering the dog's face causes "dog" probability to drop sharply, the face is clearly important. LIME automates this by: (1) dividing the image into meaningful regions (superpixels), (2) systematically hiding different combinations, and (3) fitting a simple model (linear regression) to learn which regions matter most.
+Imagine covering parts of a photograph with grey patches and seeing how the prediction changes. If hiding the dog's face causes the "dog" score to drop sharply, the face is probably important. LIME automates that idea by: (1) dividing the image into meaningful regions (superpixels), (2) hiding different combinations of those regions, and (3) fitting a simple model (linear regression) to estimate which regions matter most.
 
 #### Step-by-step computation
 
-1. **Segment into superpixels:** Using quickshift segmentation, the image is divided into ~150 superpixels — contiguous regions of visually similar pixels. Each might correspond to a patch of sky, a section of a wheel, or part of a face.
+1. **Segment into superpixels:** Using quickshift segmentation, the image is divided into ~150 superpixels contiguous regions of visually similar pixels. Each might correspond to a patch of sky, a section of a wheel, or part of a face.
 
 2. **Generate 3,000 perturbations:** For each perturbation, a random subset of superpixels is "turned off" (replaced with grey, pixel value 128). Each perturbation is encoded as a binary vector z ∈ {0,1}^150 indicating which superpixels are visible (1) or hidden (0).
 
@@ -541,11 +598,11 @@ Imagine covering parts of a photograph with grey patches and seeing how the pred
    ```
    Samples more similar to the original (more superpixels visible) receive higher weights. The coefficients w_j become per-superpixel importance scores.
 
-5. **Interpret coefficients:** Positive w_j means superpixel j *supports* the prediction — hiding it reduces confidence. Negative w_j means it *hurts* the prediction. We keep only positive contributions and normalize.
+5. **Interpret coefficients:** Positive w_j means superpixel j *supports* the prediction hiding it reduces confidence. Negative w_j means it *hurts* the prediction. We keep only positive contributions and normalize.
 
 #### Why model-agnostic matters
 
-LIME doesn't need access to weights, gradients, or architecture — just the ability to query the model. This makes it applicable to proprietary APIs (model not downloadable), non-differentiable models (random forests, ensembles), and multi-model pipelines.
+LIME doesn't need access to weights, gradients, or architecture just the ability to query the model. This makes it applicable to proprietary APIs (model not downloadable), non-differentiable models (random forests, ensembles), and multi-model pipelines.
 
 **Strengths:** Model-agnostic (works with any classifier), human-interpretable (superpixel regions are visually meaningful), captures feature interactions implicitly.
 
@@ -555,9 +612,9 @@ LIME doesn't need access to weights, gradients, or architecture — just the abi
   <img src="docs/images/attribution_maps/lime_real_tiger.png" width="45%" alt="LIME on real tiger"/>
   <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME on real ladder"/>
 </p>
-<p align="center"><em>LIME on the same tiger (left) and ladder (right). Superpixel regions are coloured by importance — the tiger's body and the ladder's structure are clearly identified as the most important regions (warm colours).</em></p>
+<p align="center">LIME on the same tiger (left) and ladder (right). Superpixel regions are coloured by importance the tiger's body and the ladder's structure are clearly identified as the most important regions (warm colours).</p>
 
-> **How to read LIME maps:** LIME's output looks different from the other methods — instead of smooth heatmaps or scattered pixels, you see distinct coloured **regions** (the puzzle pieces/superpixels). Each region gets a single importance score. Warm colours (red, orange, yellow) mean "this region is very important for the prediction." Cool colours (blue, dark blue) mean "this region doesn't help." Notice how the coloured regions follow the natural boundaries of the image (edges of the tiger, edges of the ladder) — that's because the superpixel segmentation groups visually similar pixels together. The result is the most "human-readable" of all four methods: you can literally point at a coloured region and say "the AI needs this part."
+> **How to read LIME maps:** LIME's output looks different from the other methods instead of smooth heatmaps or scattered pixels, you see distinct coloured **regions** (the puzzle pieces/superpixels). Each region gets a single importance score. Warm colours (red, orange, yellow) mean "this region is very important for the prediction." Cool colours (blue, dark blue) mean "this region doesn't help." Notice how the coloured regions follow the natural boundaries of the image (edges of the tiger, edges of the ladder) that's because the superpixel segmentation groups visually similar pixels together. The result is the most "human-readable" of all four methods: you can literally point at a coloured region and say "the AI needs this part."
 
 > **Quick comparison of all four methods at a glance:**
 > | | **Resolution** | **Speed** | **Analogy** |
@@ -579,7 +636,7 @@ LIME doesn't need access to weights, gradients, or architecture — just the abi
   <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="IG ladder"/>
   <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME ladder"/>
 </p>
-<p align="center"><em>All four methods on a real ladder. Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). All methods agree on the key features — rungs, rails, and A-frame structure.</em></p>
+<p align="center">All four methods on a real ladder. Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). All methods agree on the key features rungs, rails, and A-frame structure.</p>
 
 ---
 
@@ -667,7 +724,7 @@ For each of the 4 methods × 2 domains × 20 samples/class × 81 classes = 12,96
 1. The image is loaded and preprocessed using the same transforms as evaluation (Resize(256) → CenterCrop(224) → Normalize).
 2. The attribution function is called, producing a 224×224 heatmap normalized to [0, 1].
 3. A 3-panel visualization is saved as PNG: **original | heatmap (jet colormap) | overlay** (50% blend of original and heatmap).
-4. All heatmaps are cached in memory (a dict keyed by `method → domain → index`) for reuse by the evaluation axes — this avoids recomputing attributions multiple times.
+4. All heatmaps are cached in memory (a dict keyed by `method → domain → index`) for reuse by the evaluation axes this avoids recomputing attributions multiple times.
 
 #### Grad-CAM / Grad-CAM++ Implementation
 
@@ -749,25 +806,25 @@ For each method and each of the 81 classes:
 
 The real-domain model was trained for **21 epochs** before early stopping kicked in. It converged quickly, reaching a peak validation F1 (macro) of **0.9451** at epoch 9. The validation accuracy stabilised around 94.5% from epoch 5 onward, which is when the frozen layers were unfrozen.
 
-One interesting observation: because of mixup augmentation, the training accuracy was consistently *lower* than the validation accuracy. This is completely expected — the model trains on blended images but is evaluated on clean ones — but it can look confusing at first glance. For example, at epoch 21 the training accuracy was 88.88% while validation accuracy was 94.22%.
+One interesting observation: because of mixup augmentation, the training accuracy was consistently *lower* than the validation accuracy. This is completely expected the model trains on blended images but is evaluated on clean ones but it can look confusing at first glance. For example, at epoch 21 the training accuracy was 88.88% while validation accuracy was 94.22%.
 
 The validation loss plateaued around epoch 11 (~1.047), and the model continued for 10 more epochs (the patience window) before early stopping triggered at epoch 21.
 
 <p align="center">
   <img src="docs/images/evaluation/real_training_summary.png" width="80%" alt="Real model training summary"/>
 </p>
-<p align="center"><em>Real model training summary — loss, accuracy, F1, and precision/recall over 21 epochs. Validation accuracy stabilizes around 94.5% from epoch 5.</em></p>
+<p align="center">Real model training summary loss, accuracy, F1, and precision/recall over 21 epochs. Validation accuracy stabilizes around 94.5% from epoch 5.</p>
 
 ### Sketch-Domain Model
 
-The sketch-domain model was trained for **19 epochs**, achieving a peak validation F1 (macro) of **0.8336** at epoch 13. The convergence was noticeably slower and the final performance was lower than the real model — reflecting the greater challenge of learning from abstract sketches. Where real photographs provide rich texture, colour, and contextual cues, sketches offer only line strokes and shape outlines.
+The sketch-domain model was trained for **19 epochs**, achieving a peak validation F1 (macro) of **0.8336** at epoch 13. The convergence was noticeably slower and the final performance was lower than the real model reflecting the greater challenge of learning from abstract sketches. Where real photographs provide rich texture, colour, and contextual cues, sketches offer only line strokes and shape outlines.
 
 The validation accuracy plateaued around 82–83%, with training accuracy at 87.29% by epoch 18. The gap between training and validation is smaller here than for the real model, suggesting the sketch domain leaves less room for the model to overfit.
 
 <p align="center">
   <img src="docs/images/evaluation/sketch_training_summary.png" width="80%" alt="Sketch model training summary"/>
 </p>
-<p align="center"><em>Sketch model training summary — 19 epochs. Slower convergence and lower final accuracy (82-83%) reflects the greater challenge of learning from abstract sketches.</em></p>
+<p align="center">Sketch model training summary 19 epochs. Slower convergence and lower final accuracy (82-83%) reflects the greater challenge of learning from abstract sketches.</p>
 
 ---
 
@@ -790,13 +847,13 @@ The confusion matrices tell a vivid story of how the two models handle in-domain
   <img src="docs/images/evaluation/cm_real_real.png" width="45%" alt="Real→Real CM"/>
   <img src="docs/images/evaluation/cm_real_sketch.png" width="45%" alt="Real→Sketch CM"/>
 </p>
-<p align="center"><em>Real model — In-domain (left, strong diagonal) vs. Cross-domain on sketches (right, significant off-diagonal confusion). The real model excels on photographs but falls apart on sketches.</em></p>
+<p align="center">Real model In-domain (left, strong diagonal) vs. Cross-domain on sketches (right, significant off-diagonal confusion). The real model excels on photographs but falls apart on sketches.</p>
 
 <p align="center">
   <img src="docs/images/evaluation/cm_sketch_sketch.png" width="45%" alt="Sketch→Sketch CM"/>
   <img src="docs/images/evaluation/cm_sketch_real.png" width="45%" alt="Sketch→Real CM"/>
 </p>
-<p align="center"><em>Sketch model — In-domain on sketches (left) vs. Cross-domain on real (right). The sketch→real confusion matrix remains surprisingly clean, showing the sketch model transfers well.</em></p>
+<p align="center">Sketch model In-domain on sketches (left) vs. Cross-domain on real (right). The sketch→real confusion matrix remains surprisingly clean, showing the sketch model transfers well.</p>
 
 ### Top and Bottom Performing Classes
 
@@ -834,11 +891,11 @@ The real model excels at classes with highly distinctive visual features: *saxop
 
 The sketch model's top performers include classes with structurally distinctive shapes that are easy to draw consistently: *bicycle* has its iconic two-wheel-and-frame structure, *banana* has a unique curved shape, and *barn* has a recognisable rooftop silhouette. The bottom performers reveal that sketch classification is hardest for **elongated tools** (shovel at 44.44%, sword at 55.26%, saw at 63.64%) whose sketches look similar, and **simple geometric shapes** (triangle at 60.00%, circle at 65.00%) that lack distinguishing internal detail.
 
-Interestingly, *firetruck* drops from 100% in the real model to 57.58% in the sketch model — likely because sketches of firetrucks lack the distinctive red colour and detailed ladder/hose features that make them easy to identify in photographs. This is a perfect example of texture bias in action.
+Interestingly, *firetruck* drops from 100% in the real model to 57.58% in the sketch model  likely because sketches of firetrucks lack the distinctive red colour and detailed ladder/hose features that make them easy to identify in photographs. This is a perfect example of texture bias in action.
 
 ### Key Observations
 
-1. **Asymmetric transfer:** The sketch model transfers to real images (83.02%) far better than the real model transfers to sketches (56.17%) — a gap of ~27 percentage points. This was the most striking finding of the project.
+1. **Asymmetric transfer:** The sketch model transfers to real images (83.02%) far better than the real model transfers to sketches (56.17%) a gap of ~27 percentage points. This was the most striking finding of the project.
 2. **Shape bias:** Sketch training forces the model to learn *structural* features (edges, contours, spatial layout) that generalize across domains. Real training encourages reliance on *texture* features (colour gradients, surface patterns) that don't transfer to line drawings.
 3. **The real→sketch drop** (37.46 pp) is consistent with the known texture bias of CNNs trained on photographs (Geirhos et al., 2019).
 4. **Sketch→real actually gains** 2.4 pp over in-domain sketch performance, suggesting real images contain the structural features the sketch model learned, plus additional helpful information.
@@ -849,7 +906,7 @@ Interestingly, *firetruck* drops from 100% in the real model to 57.58% in the sk
 
 For each model, attribution maps were generated for 20 images per class per domain (1,560 images per domain, 3,120 total per model). Each attribution is saved as a three-panel image: original | heatmap (jet colourmap) | overlay. Below are representative examples that illustrate how the four methods compare and what the models focus on.
 
-### Real ladder — All Four Methods (Real Model)
+### Real ladder All Four Methods (Real Model)
 
 <p align="center">
   <img src="docs/images/attribution_maps/gradcam_real_ladder.png" width="45%" alt="Grad-CAM ladder"/>
@@ -859,9 +916,9 @@ For each model, attribution maps were generated for 20 images per class per doma
   <img src="docs/images/attribution_maps/ig_real_ladder.png" width="45%" alt="IG ladder"/>
   <img src="docs/images/attribution_maps/lime_real_ladder.png" width="45%" alt="LIME ladder"/>
 </p>
-<p align="center"><em>All four methods on a real ladder (real model). Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the ladder structure. Integrated Gradients provides pixel-level detail, highlighting specific edges of the rungs and rails. LIME identifies superpixel regions covering the ladder and background boundary. All four methods agree on the general region of interest.</em></p>
+<p align="center">All four methods on a real ladder (real model). Top: Grad-CAM (left), Grad-CAM++ (right). Bottom: Integrated Gradients (left), LIME (right). Grad-CAM and Grad-CAM++ produce broad, focused heatmaps centred on the ladder structure. Integrated Gradients provides pixel-level detail, highlighting specific edges of the rungs and rails. LIME identifies superpixel regions covering the ladder and background boundary. All four methods agree on the general region of interest.</p>
 
-### Sketch Lighthouse — All Four Methods (Sketch Model)
+### Sketch Lighthouse All Four Methods (Sketch Model)
 
 <p align="center">
   <img src="docs/images/attribution_maps/sketch_model/gradcam_sketch_lighthouse.png" width="45%" alt="Grad-CAM sketch lighthouse"/>
@@ -871,9 +928,9 @@ For each model, attribution maps were generated for 20 images per class per doma
   <img src="docs/images/attribution_maps/sketch_model/ig_sketch_lighthouse.png" width="45%" alt="IG sketch lighthouse"/>
   <img src="docs/images/attribution_maps/sketch_model/lime_sketch_lighthouse.png" width="45%" alt="LIME sketch lighthouse"/>
 </p>
-<p align="center"><em>All four methods on a sketch lighthouse (sketch model). On sketches, Grad-CAM focuses on the tower silhouette rather than texture details — consistent with the sketch model learning structural features. Integrated Gradients traces specific line strokes of the drawing. LIME highlights the superpixel regions covering the tower and light structure.</em></p>
+<p align="center">All four methods on a sketch lighthouse (sketch model). On sketches, Grad-CAM focuses on the tower silhouette rather than texture details consistent with the sketch model learning structural features. Integrated Gradients traces specific line strokes of the drawing. LIME highlights the superpixel regions covering the tower and light structure.</p>
 
-### Real Tiger — All Four Methods (Real Model, 98.36% accuracy)
+### Real Tiger - All Four Methods (Real Model, 98.36% accuracy)
 
 <p align="center">
   <img src="docs/images/attribution_maps/real_model/gradcam_real_tiger.png" width="45%" alt="Grad-CAM tiger"/>
@@ -883,7 +940,7 @@ For each model, attribution maps were generated for 20 images per class per doma
   <img src="docs/images/attribution_maps/real_model/ig_real_tiger.png" width="45%" alt="IG tiger"/>
   <img src="docs/images/attribution_maps/real_model/lime_real_tiger.png" width="45%" alt="LIME tiger"/>
 </p>
-<p align="center"><em>All four methods on a real tiger (real model). Grad-CAM and Grad-CAM++ focus on the face and striped body — the model correctly uses the distinctive stripe pattern and facial features. Integrated Gradients reveals that individual stripes and the eye region are the most important pixels. This confirms the real model leverages texture features (stripes) which are domain-specific and may not transfer to sketches.</em></p>
+<p align="center">All four methods on a real tiger (real model). Grad-CAM and Grad-CAM++ focus on the face and striped body  the model correctly uses the distinctive stripe pattern and facial features. Integrated Gradients reveals that individual stripes and the eye region are the most important pixels. This confirms the real model leverages texture features (stripes) which are domain-specific and may not transfer to sketches.</p>
 
 ### Real Scissors — All Four Methods (Real Model, 98.25% accuracy)
 
@@ -895,7 +952,7 @@ For each model, attribution maps were generated for 20 images per class per doma
   <img src="docs/images/attribution_maps/real_model/ig_real_scissors.png" width="45%" alt="IG scissors"/>
   <img src="docs/images/attribution_maps/real_model/lime_real_scissors.png" width="45%" alt="LIME scissors"/>
 </p>
-<p align="center"><em>All four methods on real scissors (real model). The scissor blades and handle junction are highlighted by all methods, confirming the model uses the correct structural features.</em></p>
+<p align="center">All four methods on real scissors (real model). The scissor blades and handle junction are highlighted by all methods, confirming the model uses the correct structural features.</p>
 
 ### Real Lighthouse — All Four Methods (Real Model, 95.83% accuracy)
 
@@ -907,7 +964,7 @@ For each model, attribution maps were generated for 20 images per class per doma
   <img src="docs/images/attribution_maps/real_model/ig_real_lighthouse.png" width="45%" alt="IG lighthouse"/>
   <img src="docs/images/attribution_maps/real_model/lime_real_lighthouse.png" width="45%" alt="LIME lighthouse"/>
 </p>
-<p align="center"><em>All four methods on a real lighthouse (real model). The tower structure and lantern room at the top are correctly identified as the key features.</em></p>
+<p align="center">All four methods on a real lighthouse (real model). The tower structure and lantern room at the top are correctly identified as the key features.</p>
 
 ### Sketch Saxophone — All Four Methods (Sketch Model)
 
@@ -919,7 +976,7 @@ For each model, attribution maps were generated for 20 images per class per doma
   <img src="docs/images/attribution_maps/sketch_model/ig_sketch_saxophone.png" width="45%" alt="IG saxophone"/>
   <img src="docs/images/attribution_maps/sketch_model/lime_sketch_saxophone.png" width="45%" alt="LIME saxophone"/>
 </p>
-<p align="center"><em>All four methods on a sketch saxophone (sketch model). The distinctive curved body and bell of the saxophone are highlighted. Integrated Gradients traces the specific ink strokes of the drawing with high precision.</em></p>
+<p align="center">All four methods on a sketch saxophone (sketch model). The distinctive curved body and bell of the saxophone are highlighted. Integrated Gradients traces the specific ink strokes of the drawing with high precision.</p>
 
 ### Real Lion — Grad-CAM vs. Integrated Gradients (Real Model, 98.08% accuracy)
 
@@ -927,7 +984,7 @@ For each model, attribution maps were generated for 20 images per class per doma
   <img src="docs/images/attribution_maps/real_model/gradcam_real_lion.png" width="45%" alt="Grad-CAM lion"/>
   <img src="docs/images/attribution_maps/real_model/ig_real_lion.png" width="45%" alt="IG lion"/>
 </p>
-<p align="center"><em>Grad-CAM (left) highlights the face and mane region as a broad hot zone. Integrated Gradients (right) provides finer detail, picking up specific facial features like the eyes, nose, and mane edges. The model is clearly attending to the correct semantically meaningful features.</em></p>
+<p align="center">Grad-CAM (left) highlights the face and mane region as a broad hot zone. Integrated Gradients (right) provides finer detail, picking up specific facial features like the eyes, nose, and mane edges. The model is clearly attending to the correct semantically meaningful features.</p>
 
 ---
 
@@ -941,7 +998,7 @@ One of the most important questions in this project is whether the real model an
   <img src="docs/images/attribution_maps/gradcam_real_model_sketch_bicycle.png" width="45%" alt="Real model on sketch bicycle"/>
   <img src="docs/images/attribution_maps/gradcam_sketch_model_sketch_bicycle.png" width="45%" alt="Sketch model on sketch bicycle"/>
 </p>
-<p align="center"><em>Grad-CAM on a sketch bicycle — Real model (left) vs. Sketch model (right). The sketch model produces a more focused, confident heatmap centred on the bicycle's structural features — wheels, frame, handlebars. The real model produces a more diffuse, uncertain heatmap, reflecting its difficulty in recognising the object without texture cues.</em></p>
+<p align="center">Grad-CAM on a sketch bicycle Real model (left) vs. Sketch model (right). The sketch model produces a more focused, confident heatmap centred on the bicycle's structural features wheels, frame, handlebars. The real model produces a more diffuse, uncertain heatmap, reflecting its difficulty in recognising the object without texture cues.</p>
 
 ### Sketch Banana: Real Model vs. Sketch Model
 
@@ -953,7 +1010,7 @@ One of the most important questions in this project is whether the real model an
   <img src="docs/images/attribution_maps/cross_domain/ig_real_model_sketch_banana.png" width="45%" alt="Real model IG on sketch banana"/>
   <img src="docs/images/attribution_maps/cross_domain/ig_sketch_model_sketch_banana.png" width="45%" alt="Sketch model IG on sketch banana"/>
 </p>
-<p align="center"><em>Sketch banana: real model (left) vs. sketch model (right). Top: Grad-CAM. Bottom: Integrated Gradients. The sketch model produces sharper, more confident attributions because it was trained on similar line-art images. The real model's attributions are more scattered, suggesting uncertainty about which features to rely on in an unfamiliar visual style.</em></p>
+<p align="center">Sketch banana: real model (left) vs. sketch model (right). Top: Grad-CAM. Bottom: Integrated Gradients. The sketch model produces sharper, more confident attributions because it was trained on similar line-art images. The real model's attributions are more scattered, suggesting uncertainty about which features to rely on in an unfamiliar visual style.</p>
 
 ### Sketch Tiger: Real Model vs. Sketch Model
 
@@ -965,7 +1022,7 @@ One of the most important questions in this project is whether the real model an
   <img src="docs/images/attribution_maps/cross_domain/lime_real_model_sketch_tiger.png" width="45%" alt="Real model LIME on sketch tiger"/>
   <img src="docs/images/attribution_maps/cross_domain/lime_sketch_model_sketch_tiger.png" width="45%" alt="Sketch model LIME on sketch tiger"/>
 </p>
-<p align="center"><em>Sketch tiger: real model (left) vs. sketch model (right). Top: Grad-CAM. Bottom: LIME. The real model struggles with the sketch — its heatmap is diffuse and may focus on background regions, indicating poor explanation quality under domain shift. The sketch model produces more targeted attributions on the tiger's body and stripes. This illustrates how domain shift degrades not just accuracy but also explanation quality.</em></p>
+<p align="center">Sketch tiger: real model (left) vs. sketch model (right). Top: Grad-CAM. Bottom: LIME. The real model struggles with the sketch its heatmap is diffuse and may focus on background regions, indicating poor explanation quality under domain shift. The sketch model produces more targeted attributions on the tiger's body and stripes. This illustrates how domain shift degrades not just accuracy but also explanation quality.</p>
 
 ---
 
@@ -1027,7 +1084,7 @@ One of the most important questions in this project is whether the real model an
 
 ### What the faithfulness results tell us
 
-- **LIME is the most faithful by insertion AUC** (0.61 real model / 0.57 sketch model in-domain). Its superpixel-based approach effectively isolates the regions the model depends on — when you reveal just those regions, the model's confidence recovers quickly.
+- **LIME is the most faithful by insertion AUC** (0.61 real model / 0.57 sketch model in-domain). Its superpixel-based approach effectively isolates the regions the model depends on when you reveal just those regions, the model's confidence recovers quickly.
 - **Grad-CAM++ leads on deletion AUC** (0.32 real model / 0.20 sketch model). Its attributions best pinpoint features whose removal disrupts predictions.
 - **Integrated Gradients underperforms on faithfulness** despite pixel-level precision. Its distributed attributions across many pixels make it harder to isolate critical features through sequential deletion/insertion.
 - **Domain shift reduces faithfulness for the real model:** Deletion AUC drops from 0.29–0.32 (real) to 0.05–0.13 (sketch), indicating explanations become less meaningful on out-of-domain data. When the model doesn't know what to look for, its explanations become unreliable.
@@ -1048,11 +1105,11 @@ One of the most important questions in this project is whether the real model an
 
 ### What the consistency results tell us
 
-- **Grad-CAM++ achieves the highest consistency** (≥0.96 for both models). Its coarse resolution naturally produces similar heatmaps regardless of visual style — it's hard for a 7×7 grid to look very different between a photo and a sketch of the same object.
+- **Grad-CAM++ achieves the highest consistency** (≥0.96 for both models). Its coarse resolution naturally produces similar heatmaps regardless of visual style it's hard for a 7×7 grid to look very different between a photo and a sketch of the same object.
 - **Grad-CAM** is nearly as consistent (~0.95).
-- **Integrated Gradients shows the largest model gap:** The sketch model (0.895) is substantially more consistent than the real model (0.842). This means the sketch model attends to the same structural features (edges, contours) in both domains, while the real model's pixel-level attributions are more domain-dependent — it looks for texture in photos and doesn't know what to look for in sketches.
+- **Integrated Gradients shows the largest model gap:** The sketch model (0.895) is substantially more consistent than the real model (0.842). This means the sketch model attends to the same structural features (edges, contours) in both domains, while the real model's pixel-level attributions are more domain-dependent it looks for texture in photos and doesn't know what to look for in sketches.
 - **LIME** achieves moderate consistency (~0.87–0.88), limited by stochastic superpixel segmentation.
-- Overall high consistency (>0.84 for all methods) suggests that despite performance drops under domain shift, models still attend to broadly similar spatial regions. The models aren't completely lost — they still roughly know where to look, but their confidence and precision suffer.
+- Overall high consistency (>0.84 for all methods) suggests that despite performance drops under domain shift, models still attend to broadly similar spatial regions. The models aren't completely lost they still roughly know where to look, but their confidence and precision suffer.
 
 ---
 
@@ -1060,7 +1117,7 @@ One of the most important questions in this project is whether the real model an
 
 **Question:** How does the model organize images in its internal feature space?
 
-Feature vectors (2048-D) from the penultimate layer were projected to 2D using t-SNE and UMAP for both models. The results are revealing.
+Feature vectors (2048-D) from the penultimate layer were projected to 2D using t-SNE and UMAP for both models.
 
 ### Real Model — Feature Space
 
@@ -1068,7 +1125,7 @@ Feature vectors (2048-D) from the penultimate layer were projected to 2D using t
   <img src="docs/images/representations/real_tsne_domain.png" width="45%" alt="Real model t-SNE by domain"/>
   <img src="docs/images/representations/real_umap_domain.png" width="45%" alt="Real model UMAP by domain"/>
 </p>
-<p align="center"><em>Real model feature space coloured by domain — t-SNE (left) and UMAP (right). Blue = real, orange = sketch. Notice the clear separation between domains — the real model encodes domain-specific (texture-based) features.</em></p>
+<p align="center">Real model feature space coloured by domain t-SNE (left) and UMAP (right). Blue = real, orange = sketch. Notice the clear separation between domains — the real model encodes domain-specific (texture-based) features.</p>
 
 ### Sketch Model — Feature Space
 
@@ -1076,7 +1133,7 @@ Feature vectors (2048-D) from the penultimate layer were projected to 2D using t
   <img src="docs/images/representations/sketch_tsne_domain.png" width="45%" alt="Sketch model t-SNE by domain"/>
   <img src="docs/images/representations/sketch_umap_domain.png" width="45%" alt="Sketch model UMAP by domain"/>
 </p>
-<p align="center"><em>Sketch model feature space coloured by domain — t-SNE (left) and UMAP (right). The real and sketch points are much more interleaved, confirming the sketch model learns domain-invariant (shape-based) representations.</em></p>
+<p align="center">Sketch model feature space coloured by domain t-SNE (left) and UMAP (right). The real and sketch points are much more interleaved, confirming the sketch model learns domain-invariant (shape-based) representations.</p>
 
 ### Class Structure
 
@@ -1084,16 +1141,16 @@ Feature vectors (2048-D) from the penultimate layer were projected to 2D using t
   <img src="docs/images/representations/real_tsne_class.png" width="45%" alt="Real model t-SNE by class"/>
   <img src="docs/images/representations/sketch_tsne_class.png" width="45%" alt="Sketch model t-SNE by class"/>
 </p>
-<p align="center"><em>t-SNE coloured by class — Real model (left) vs. Sketch model (right). Both models produce coherent class clusters, confirming the 81-class task has been learned successfully.</em></p>
+<p align="center">t-SNE coloured by class Real model (left) vs. Sketch model (right). Both models produce coherent class clusters, confirming the 81-class task has been learned successfully.</p>
 
 ### What the representations reveal
 
-This is where the story comes together. The representation analysis provides the *mechanistic explanation* for why the two models transfer so differently:
+This part helps explain why the two models transfer so differently:
 
-- **The real model separates domains:** In its feature space, real and sketch images form distinct clusters even for the same class. The model has learned separate representations for "photo of ladder" and "sketch of ladder". This domain separation directly explains the 37-point accuracy drop when transferring to sketches — the model maps sketch images to unfamiliar locations in feature space.
+- **The real model separates domains:** In its feature space, real and sketch images form distinct clusters even for the same class. The model has learned separate representations for "photo of ladder" and "sketch of ladder". This domain separation directly explains the 37-point accuracy drop when transferring to sketches the model maps sketch images to unfamiliar locations in feature space.
 - **The sketch model mixes domains:** Real and sketch images are interleaved, with same-class images from both domains occupying overlapping regions. The model has learned a single, unified representation for "ladder" regardless of whether it's a photo or a sketch. This domain-invariant organization explains the sketch model's superior transfer.
 - **Class structure is preserved in both:** Despite differences in domain separation, both models produce coherent class clusters, confirming that the 81-class classification task has been learned.
-- These visualizations provide **direct evidence for the shape bias hypothesis**: sketch training creates a domain-agnostic feature space (shape-based), while real training encodes domain identity (texture-based) alongside class identity.
+- Taken together, these plots support the shape-bias story: sketch training leads to a more domain-agnostic feature space, while real-image training keeps domain identity more tightly baked into the representation.
 
 ---
 
@@ -1101,9 +1158,9 @@ This is where the story comes together. The representation analysis provides the
 
 ### Domain Transfer Asymmetry
 
-The most striking finding is the **asymmetric transfer** between domains. The sketch→real transfer (83.02%) substantially outperforms real→sketch (56.17%). This result aligns with the *texture bias* hypothesis: CNNs trained on photographs tend to rely on texture cues (colour gradients, surface patterns) that are absent in line drawings. Conversely, sketch training forces the model to rely on *shape-based* features (edges, contours, spatial relationships) that are present in both domains.
+The clearest result is the **asymmetric transfer** between domains. Sketch→real transfer (83.02%) is much better than real→sketch (56.17%). That fits the texture-bias story: models trained on photos learn to use texture cues that do not exist in line drawings, while models trained on sketches are pushed toward shape-based features that still show up in photos.
 
-The real model loses 37.46 percentage points when transferred to sketches. The sketch model actually *gains* 2.40 percentage points when transferred to real images. This asymmetry is remarkable — it means learning from abstract line drawings produces a more universally useful representation than learning from rich, detailed photographs.
+The real model loses 37.46 percentage points when moved to sketches. The sketch model actually *gains* 2.40 percentage points when moved to real images. That is a pretty strong sign that sketch training produces a more transferable representation.
 
 ### Stability vs. Granularity Trade-off
 
@@ -1113,7 +1170,7 @@ There is a clear trade-off between explanation stability and spatial granularity
 - **Integrated Gradients** operates at full 224×224 resolution, capturing pixel-level details but at the cost of perturbation sensitivity (SSIM ≈ 0.50).
 - **LIME** operates at superpixel resolution, with inherent stochasticity from its sampling-based approach.
 
-This trade-off is fundamental — you can't have both high resolution and high stability. Practitioners need to choose based on their application: if you need robust, consistent explanations (e.g., for regulatory compliance), use Grad-CAM++. If you need to understand exactly which pixels matter (e.g., for debugging), use Integrated Gradients and accept the noise.
+This trade-off is fundamental you can't have both high resolution and high stability. Practitioners need to choose based on their application: if you need robust, consistent explanations (e.g., for regulatory compliance), use Grad-CAM++. If you need to understand exactly which pixels matter (e.g., for debugging), use Integrated Gradients and accept the noise.
 
 ### Explanation Quality Under Domain Shift
 
@@ -1123,15 +1180,15 @@ Our cross-domain attribution comparisons and the quantitative faithfulness resul
 - Faithfulness drops sharply: deletion AUC falls from 0.29–0.32 to 0.05–0.13, indicating the explanations no longer identify the model's actual decision features.
 - LIME and Integrated Gradients show more scattered attributions, suggesting the model is "guessing" rather than using learned features.
 
-In contrast, the sketch model's attributions on real images remain relatively focused, and its faithfulness scores are balanced across domains (e.g., LIME insertion: 0.55 real vs. 0.57 sketch). The representation analysis provides a mechanistic explanation: the sketch model's feature space mixes domains, while the real model separates them, directly explaining the asymmetric transfer and explanation degradation.
+In contrast, the sketch model's attributions on real images stay relatively focused, and its faithfulness scores are balanced across domains (e.g., LIME insertion: 0.55 real vs. 0.57 sketch). That lines up with the representation plots: the sketch model mixes domains more naturally in feature space, while the real model keeps them more separated.
 
 ### Recommendations for Practitioners
 
 Based on our analysis:
 
-- **For quick, reliable explanations:** Use Grad-CAM++ — it offers the best stability while providing class-discriminative spatial highlighting.
-- **For detailed pixel-level analysis:** Use Integrated Gradients — despite lower stability, its axiomatic guarantees make it suitable for rigorous analysis.
-- **For model-agnostic explanations:** Use LIME — when the model architecture is unknown, LIME is the only option, though users should be aware of its stochastic nature.
+- **For quick, reliable explanations:** Use Grad-CAM++ it offers the best stability while providing class-discriminative spatial highlighting.
+- **For detailed pixel-level analysis:** Use Integrated Gradients despite lower stability, its axiomatic guarantees make it suitable for rigorous analysis.
+- **For model-agnostic explanations:** Use LIME when the model architecture is unknown, LIME is the only option, though users should be aware of its stochastic nature.
 - **For cross-domain studies:** Consider training on sketches or shape-biased data to improve both classification transfer and explanation consistency.
 
 ---
@@ -1147,9 +1204,9 @@ Based on our analysis:
 | **Domain-Invariant Representations** | Sketch model | Sketch training produces mixed real/sketch feature space; real training separates them |
 | **Cross-Domain Transfer** | Sketch→Real (83.02%) | Shape-based features generalize; texture-based features don't |
 
-**No single method wins on all axes.** Grad-CAM++ is the most stable and consistent but LIME is the most faithful. Integrated Gradients provides the finest spatial detail but at the cost of stability. This demonstrates why multi-axis evaluation is essential — any single metric would give a misleading picture of explanation quality.
+There is no single "best" explanation method here. Grad-CAM++ was the most stable, LIME was usually the most faithful, and Integrated Gradients gave the most detail but was also the noisiest.
 
-The overarching takeaway: **XAI evaluation must be multi-axis.** A comprehensive assessment requires measuring stability, faithfulness, cross-domain consistency, and representation structure jointly. And critically, **explanation reliability is not guaranteed even when classification accuracy remains high** — domain shift can silently degrade the quality of model explanations.
+The main lesson from this project is pretty simple: you cannot judge XAI with one number. Looking at stability, faithfulness, cross-domain consistency, and representation behavior together gives a much more honest picture. One of the clearest results here is that explanations can get worse under domain shift even when the model still looks reasonably accurate.
 
 ---
 
